@@ -1,0 +1,11 @@
+# Build files
+docs/
+target/
+
+# Eclipse settings files
+.settings/
+
+# IntelliJ IDEA settings files
+.idea/
+
+
