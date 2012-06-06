@@ -9,4 +9,19 @@ package uk.co.essarsoftware.par.engine;
  */
 public class EngineException extends Exception
 {
+    public EngineException() {
+        super();
+    }
+
+    public EngineException(String message) {
+        super(message);
+    }
+    
+    public EngineException(Throwable cause) {
+        super(cause);
+    }
+    
+    public EngineException(String message, Throwable cause) {
+        super(message, cause);
+    }
 }

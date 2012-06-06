@@ -13,7 +13,7 @@ public interface Table
 {
     public Card getDiscard();
 
-    public Play[] getPlays();
+    public Play[] getSeats();
 
     public Play[] getPlays(Player player);
 }

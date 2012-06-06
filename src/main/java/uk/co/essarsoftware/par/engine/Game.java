@@ -13,9 +13,13 @@ public interface Game
 
     public Round getCurrentRound();
 
-    public int getTurn();
+    public Player getDealer();
 
     public Player[] getPlayers();
 
     public Table getTable();
+
+    public int getTurn();
+
+    public boolean isBuyAllowed();
 }

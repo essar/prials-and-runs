@@ -3,6 +3,9 @@ package uk.co.essarsoftware.par.engine.std;
 import org.apache.log4j.Logger;
 import uk.co.essarsoftware.games.cards.Card;
 import uk.co.essarsoftware.par.engine.*;
+import uk.co.essarsoftware.par.engine.events.*;
+
+import java.util.Arrays;
 
 /**
  * Created with IntelliJ IDEA.
@@ -16,12 +19,12 @@ class EngineImpl implements Engine
     private static Logger log = Logger.getLogger(EngineImpl.class);
     private static Logger gameLog = Logger.getLogger("uk.co.essarsoftware.par.gamelog");
 
-    private boolean down;
-
+    private final EngineClientList clients;
     private final GameImpl game;
 
     public EngineImpl(GameImpl game) {
         this.game = game;
+        clients = new EngineClientList();
     }
 
     private void gameLog(String msg) {
@@ -29,7 +32,17 @@ class EngineImpl implements Engine
     }
 
     private PlayerImpl getPlayerImpl(Player player) {
-        return (PlayerImpl) player;
+        return game.lookupPlayer(player);
+    }
+    
+    private void queueEvent(GameEvent evt) {
+        if(evt == null) {
+            log.warn(String.format("Attempting to queue null event"));
+        } else {
+            for(EngineClient cli : clients.values()) {
+                cli.addEvent(evt);
+            }
+        }
     }
 
     private boolean validatePlayer(PlayerImpl player, boolean currentPlayer, PlayerState... states) {
@@ -47,6 +60,71 @@ class EngineImpl implements Engine
         }
         throw new IllegalArgumentException("Not correct state");
     }
+    
+    
+    void activate(Player player) throws EngineException {
+        PlayerImpl pl = getPlayerImpl(player);
+        synchronized(pl.getPlayerState()) {
+            // Validate pre-requisites
+            if(validatePlayer(pl, true, PlayerState.WATCHING, PlayerState.BOUGHT)) {
+                
+                if(pl.getPlayerState() == PlayerState.WATCHING) {
+
+                    // Set player state
+                    pl.setPlayerState(PlayerState.PICKUP);
+                } else if(pl.getPlayerState() == PlayerState.BOUGHT) {
+                    
+                    // Player bought last turn, so will be skipping a turn
+                    
+                    // Add penalty card to hand
+                    pl.getHand().pickup(pl.getPenaltyCard());
+                    pl.clearPenaltyCard();
+
+                    // Set player state
+                    pl.setPlayerState(PlayerState.END_TURN);
+
+                    // Queue notifications
+                    queueEvent(new PickupEvent(player));
+
+                    gameLog(String.format("%s picked up a penalty card", player));
+                } else {
+                    throw new IllegalStateException("Unexpected player state");
+                }
+            }
+        }
+    }
+    
+    void endTurn(Player player) throws EngineException {
+        PlayerImpl pl = getPlayerImpl(player);
+        synchronized(pl.getPlayerState()) {
+            // Validate pre-requisites
+            if(validatePlayer(pl, true, PlayerState.END_TURN)) {
+                
+                // TODO Stuff here to make sure everyone is in sync
+
+                // Make sure the event queues for each player are empty
+                for(EngineClient cli : clients.values()) {
+                    synchronized(cli.queue) {
+                        while(cli.getQueueSize() > 0) {
+                            try {
+                                cli.queue.wait(2000L);
+                            } catch(InterruptedException ie) { }
+                        }
+                    }
+                }
+                
+                // Check whether player is out
+                
+                if(pl.getHandSize() == 0) {
+                    // Player is out
+                    pl.setPlayerState(PlayerState.END_ROUND);
+                }
+                
+                pl.setPlayerState(PlayerState.WATCHING);
+            }
+        }
+    }
+    
 
     public void discard(Player player, Card card) throws EngineException {
         PlayerImpl pl = getPlayerImpl(player);
@@ -62,7 +140,9 @@ class EngineImpl implements Engine
                 // Set player state
                 pl.setPlayerState(PlayerState.END_TURN);
 
-                // TODO Queue notifications
+                // Queue notifications
+                queueEvent(new DiscardEvent(player, card));
+
                 gameLog(String.format("%s discarded %s", player, card));
             }
         }
@@ -80,13 +160,14 @@ class EngineImpl implements Engine
                 pl.getHand().pickup(card);
 
                 // Set player state
-                if(down) {
+                if(pl.isDown()) {
                     pl.setPlayerState(PlayerState.PEGGING);
                 } else {
                     pl.setPlayerState(PlayerState.DISCARD);
                 }
 
-                // TODO Queue notifications
+                // Queue notifications
+                queueEvent(new PickupEvent(player, card));
 
                 gameLog(String.format("%s picked up %s from discard pile", player, card));
                 return card;
@@ -108,13 +189,14 @@ class EngineImpl implements Engine
                 pl.getHand().pickup(card);
 
                 // Set player state
-                if(down) {
+                if(pl.isDown()) {
                     pl.setPlayerState(PlayerState.PEGGING);
                 } else {
                     pl.setPlayerState(PlayerState.DISCARD);
                 }
 
-                // TODO Queue notifications
+                // Queue notifications
+                queueEvent(new PickupEvent(player, null));
 
                 gameLog(String.format("%s picked up from draw pile", player));
                 return card;
@@ -125,18 +207,62 @@ class EngineImpl implements Engine
     }
 
     public void playCards(Player player, Card[] cards) throws EngineException {
-        //To change body of implemented methods use File | Settings | File Templates.
+        PlayerImpl pl = getPlayerImpl(player);
+        synchronized(pl.getPlayerState()) {
+            // Validate pre-requisites
+            if(validatePlayer(pl, true, PlayerState.DISCARD, PlayerState.PLAYING)) {
+
+                if(game.getTable().getSeat(pl).getUninitialisedPlayCount() > 0) {
+                    // Set player state
+                    pl.setPlayerState(PlayerState.PLAYING);
+                } else {
+                    Play[] plays = game.getTable().getPlays(pl);
+
+                    // Set player state
+                    pl.setPlayerState(PlayerState.PLAYED);
+                    pl.setDown(true);
+
+                    // Queue notifications
+                    queueEvent(new PlayCardsEvent(player, plays));
+
+                    gameLog(String.format("%s played %s", player, Arrays.toString(plays)));
+                }
+            }
+        }
     }
 
     public void pegCard(Player player, Play play, Card card) throws EngineException {
-        //To change body of implemented methods use File | Settings | File Templates.
+        PlayerImpl pl = getPlayerImpl(player);
+        synchronized(pl.getPlayerState()) {
+            // Validate pre-requisites
+            if(validatePlayer(pl, true, PlayerState.PEGGING)) {
+
+                // Set player state
+                pl.setPlayerState(PlayerState.PEGGING);
+
+                // Queue notifications
+                queueEvent(new PegCardEvent(player, play, card));
+
+                gameLog(String.format("%s pegged %s onto %s", player, card, play));
+            }
+        }
     }
 
-    public void reset(Player player) throws EngineException {
-        //To change body of implemented methods use File | Settings | File Templates.
+    public void resetPlays(Player player) throws EngineException {
+        PlayerImpl pl = getPlayerImpl(player);
+        synchronized(pl.getPlayerState()) {
+            // Validate pre-requisites
+            if(validatePlayer(pl, true, PlayerState.PLAYING)) {
+
+                // Set player state
+                pl.setPlayerState(PlayerState.DISCARD);
+
+                gameLog(String.format("%s reset plays", player));
+            }
+        }
     }
 
-    public void buy(Player player, Player buyer) throws EngineException {
+    public boolean buy(Player player, Player buyer) throws EngineException {
         PlayerImpl pl = getPlayerImpl(player);
         synchronized(pl.getPlayerState()) {
             // Validate pre-requisites
@@ -148,9 +274,11 @@ class EngineImpl implements Engine
                             by.setPlayerState(PlayerState.BUYING);
                             pl.setPlayerState(PlayerState.BUY_REQ);
 
-                            // TODO Queue notifications
+                            // Queue notifications
+                            queueEvent(new BuyRequestEvent(player, buyer));
 
                             gameLog(String.format("%s requested to buy %s from %s", buyer, game.getTable().getDiscard(), player));
+                            return true;
                         } else {
                             log.warn(String.format("%s attempting to buy from %s in round %s, turn %d", buyer, player, game.getCurrentRound(), game.getTurn()));
                         }
@@ -158,6 +286,7 @@ class EngineImpl implements Engine
                 }
             }
         }
+        return false;
     }
 
     public Card approveBuy(Player player, Player buyer) throws EngineException {
@@ -186,13 +315,14 @@ class EngineImpl implements Engine
 
                             // Set player states
                             by.setPlayerState(PlayerState.BOUGHT);
-                            if(down) {
+                            if(pl.isDown()) {
                                 pl.setPlayerState(PlayerState.PEGGING);
                             } else {
                                 pl.setPlayerState(PlayerState.DISCARD);
                             }
 
-                            // TODO Queue notifications
+                            // Queue notifications
+                            queueEvent(new BuyApprovedEvent(player, buyer, bought));
 
                             gameLog(String.format("%s approved buy of %s from %s", player, bought, buyer));
                             return card;
@@ -221,15 +351,16 @@ class EngineImpl implements Engine
                             // Add card to player hand
                             pl.getHand().pickup(card);
 
-                            // TODO Queue notifications
-
                             // Set player states
                             by.setPlayerState(PlayerState.WATCHING);
-                            if(down) {
+                            if(pl.isDown()) {
                                 pl.setPlayerState(PlayerState.PEGGING);
                             } else {
                                 pl.setPlayerState(PlayerState.PLAYING);
                             }
+                            
+                            // Queue notifications
+                            queueEvent(new BuyRejectedEvent(player, buyer, card));
 
                             gameLog(String.format("%s rejected buy of %s from %s", player, card, buyer));
                             return card;

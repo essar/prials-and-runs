@@ -1,17 +1,13 @@
 package uk.co.essarsoftware.par.engine.std;
 
-import uk.co.essarsoftware.games.cards.Card;
-import uk.co.essarsoftware.games.cards.CardArray;
-import uk.co.essarsoftware.games.cards.DiscardPile;
-import uk.co.essarsoftware.games.cards.DrawPile;
-import uk.co.essarsoftware.par.engine.Play;
+import org.apache.log4j.Logger;
+import uk.co.essarsoftware.games.cards.*;
 import uk.co.essarsoftware.par.engine.Player;
 import uk.co.essarsoftware.par.engine.Round;
 import uk.co.essarsoftware.par.engine.Table;
 
 import java.util.ArrayList;
 import java.util.HashMap;
-import java.util.HashSet;
 
 /**
  * Created with IntelliJ IDEA.
@@ -22,132 +18,181 @@ import java.util.HashSet;
  */
 class TableImpl implements Table
 {
+    private static double overDealFactor = 1.65;
+    private static int handSize = 11;
+    private static Logger log = Logger.getLogger(Table.class);
+
     private final DiscardPile discardPile;
     private final DrawPile drawPile;
-    private final PlayMap plays;
+    private final SeatMap seats;
 
     TableImpl() {
         discardPile = new DiscardPile();
         drawPile = new DrawPile();
-        plays = new PlayMap();
+        seats = new SeatMap();
     }
 
-    private void recyclePack() {
-        synchronized(drawPile) {
-            synchronized(discardPile) {
-                Card discard = discardPile.pickup();
-                discardPile.resetTo(drawPile);
-                discardPile.discard(discard);
-            }
+    void createSeat(PlayerImpl player) {
+        // Validate arguments
+        if(player == null) {
+            throw new IllegalArgumentException("Cannot add null player to table");
         }
-    }
+        seats.put(player, null);
+        log.debug(String.format("Seat created for %s", player));
 
-    void addPlayer(PlayerImpl player) {
-        synchronized(plays) {
-            plays.put(player, null);
+        // Run assertions
+        assert(seats.containsKey(player));
+    }
+    
+    TableSeat getSeat(PlayerImpl player) {
+        if(! seats.containsPlayer(player)) {
+            log.warn(String.format("Could not find a seat at the table for %s", player));
+            return null;
         }
+        return seats.getSeat(player);
     }
 
-    CardArray[] initRound(Round round) {
-        // Reset all cards into draw pile
-        discardPile.resetTo(drawPile);
+    void removeSeat(PlayerImpl player) {
+        // Validate arguments
+        if(player == null) {
+            throw new IllegalArgumentException("Cannot remove null player from table");
+        }
+        if(seats.remove(player) == null) {
+            log.warn(String.format("Could not find seat for %s", player));
+        }
+        log.debug(String.format("Seat removed for %s", player));
 
-        // Shuffle deck
-        drawPile.shuffle();
+        // Run assertions
+        assert(! seats.containsKey(player));
+    }
 
-        // Deal hands
-        CardArray[] hands = drawPile.deal(plays.size(), 11);
-        for(Player p : plays.keySet()) {
-            PlaySet ps = new PlaySet();
-            for(int i = 0; i < round.getPrials(); i ++) {
-                ps.add(new PrialImpl());
+    void initialiseRound(Round round) {
+        // Validate arguments
+        if(round == null) {
+            throw new IllegalArgumentException("Cannot initialise table with null Round");
+        }
+
+        // Initialise seats
+        for(PlayerImpl player : seats.keySet()) {
+            seats.put(player, new TableSeat(round));
+        }
+
+        // Flip top draw card to discard pile
+        discardPile.discard(drawPile.pickup());
+    }
+
+    CardArray[] deal() {
+        CardArray[] hands = new CardArray[seats.size()];
+        for(int i = 0; i < handSize; i ++) {
+            for(int ii = 0; ii < hands.length; ii ++) {
+                if(hands[ii] == null) {
+                    hands[ii] = new CardArray();
+                }
+                hands[ii].add(pickupDraw());
             }
-            for(int i = 0; i < round.getRuns(); i ++) {
-                ps.add(new RunImpl());
-            }
-            plays.put(p, ps);
         }
         return hands;
     }
 
-    void removePlayer(PlayerImpl player) {
-        synchronized(plays) {
-            plays.remove(player);
+    void resetTable() {
+        // Clear existing draw and discard piles
+        drawPile.clear();
+        discardPile.clear();
+
+        // Repopulate the draw pile
+        int minDeckSize = (int) ((double) seats.size() * (double) handSize * overDealFactor);
+        log.debug(String.format("%d cards are required as a minimum.", minDeckSize));
+
+        while(drawPile.size() < minDeckSize) {
+            drawPile.add(Pack.generatePackWithJokers());
+            log.debug(String.format("Draw pile now %d cards, minimum of %d needed.", drawPile.size(), minDeckSize));
         }
+        log.debug(String.format("Draw pile rebuilt with %d cards.", drawPile.size()));
+
+        // Shuffle the deck
+        drawPile.shuffle();
     }
 
 
     void discard(Card card) {
-        synchronized(discardPile) {
-            discardPile.discard(card);
+        // Validate arguments
+        if(card == null) {
+            throw new IllegalArgumentException("Cannot add null to discard pile");
         }
+
+        discardPile.discard(card);
+        log.debug(String.format("Card %s added to discard pile, %d card(s) now on discard pile.", card, discardPile.size()));
     }
 
     Card pickupDiscard() {
-        synchronized(discardPile) {
-            if(discardPile.size() > 0) {
-                return discardPile.pickup();
-            }
+        if(discardPile.size() == 0) {
+            log.warn(String.format("Attempting to pick up from empty discard pile"));
             return null;
         }
+        Card card = discardPile.pickup();
+        log.debug(String.format("Card %s taken from discard pile, %d card(s) remain on discard pile.", card, discardPile.size()));
+
+        return card;
     }
 
     Card pickupDraw() {
-        synchronized(drawPile) {
-            if(drawPile.size() > 0) {
-                try {
-                    return drawPile.pickup();
-                } finally {
-                    if(drawPile.size() == 0) {
-                        recyclePack();
-                    }
-                }
-            }
+        if(drawPile.size() == 0) {
+            log.warn(String.format("Attempting to pick up from empty draw pile"));
             return null;
         }
+        Card card = drawPile.pickup();
+        log.debug(String.format("Card %s taken from draw pile, %d card(s) remain on draw pile.", card, drawPile.size()));
+
+        // If there are no cards left, move cards from the discard pile back to draw pile
+        if(drawPile.size() == 0) {
+            Card discard = discardPile.pickup();
+            discardPile.resetTo(drawPile);
+            discardPile.discard(discard);
+            log.debug(String.format("Discard pile recycled, %d card(s) now on draw pile.", drawPile.size()));
+        }
+
+        return card;
     }
 
-
+    @Override
     public Card getDiscard() {
-        synchronized(discardPile) {
-            if(discardPile.size() > 0) {
-                return discardPile.getDiscard();
-            }
+        if(discardPile.size() == 0) {
+            log.warn(String.format("Attempting to get top card from empty discard pile"));
             return null;
         }
+        return discardPile.getDiscard();
     }
 
-    public Play[] getPlays() {
-        synchronized(plays) {
-            return plays.getAllPlays();
-        }
-    }
-
-    public Play[] getPlays(Player player) {
-        synchronized(plays) {
-            if(plays.containsKey(player)) {
-                return plays.get(player).getPlays();
-            }
+    @Override
+    public PlayImpl[] getPlays(Player player) {
+        if(! seats.containsPlayer(player)) {
+            log.warn(String.format("Could not find a seat at the table for %s", player));
             return null;
         }
+        return seats.getSeat(player).getPlays();
     }
 
-
-    private class PlaySet extends HashSet<Play>
-    {
-        public Play[] getPlays() {
-            return toArray(new Play[size()]);
-        }
+    @Override
+    public PlayImpl[] getSeats() {
+        return seats.getAllPlays();
     }
 
-    private class PlayMap extends HashMap<Player, PlaySet>
+    private class SeatMap extends HashMap<PlayerImpl, TableSeat>
     {
-        public Play[] getAllPlays() {
-            ArrayList<Play> allPlays = new ArrayList<Play>();
-            for(PlaySet ps : values()) {
-                allPlays.addAll(ps);
+        public PlayImpl[] getAllPlays() {
+            ArrayList<PlayImpl> allPlays = new ArrayList<PlayImpl>();
+            for(TableSeat ts : values()) {
+                allPlays.addAll(ts);
             }
-            return allPlays.toArray(new Play[allPlays.size()]);
+            return allPlays.toArray(new PlayImpl[allPlays.size()]);
+        }
+        
+        public boolean containsPlayer(Player player) {
+            return containsKey(player);
+        }
+        
+        public TableSeat getSeat(Player player) {
+            return get(player);
         }
     }
 }

@@ -9,7 +9,7 @@ package uk.co.essarsoftware.par.engine;
  */
 public enum Round
 {
-    PP(2,0), PR(1,1), RR(0,2), PPR(2,1), PRR(1,2), PPP(3,0), RRR(0,3), END(0,0);
+    START(0,0), PP(2,0), PR(1,1), RR(0,2), PPR(2,1), PRR(1,2), PPP(3,0), RRR(0,3), END(0,0);
 
     private final int prials, runs;
 

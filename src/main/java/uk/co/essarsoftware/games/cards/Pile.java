@@ -15,6 +15,10 @@ abstract class Pile
         cards = new CardStack();
     }
 
+    public void clear() {
+        cards.clear();
+    }
+
     public Card pickup() {
         return cards.pop();
     }

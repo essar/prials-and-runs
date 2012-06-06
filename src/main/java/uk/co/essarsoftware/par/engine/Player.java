@@ -11,9 +11,11 @@ public interface Player
 {
     public int getHandSize();
 
-    public boolean hasPenaltyCard();
-
     public String getPlayerName();
 
     public PlayerState getPlayerState();
+
+    public boolean hasPenaltyCard();
+
+    public boolean isDown();
 }

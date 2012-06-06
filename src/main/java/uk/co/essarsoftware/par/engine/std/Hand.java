@@ -3,6 +3,7 @@ package uk.co.essarsoftware.par.engine.std;
 import uk.co.essarsoftware.games.cards.Card;
 import uk.co.essarsoftware.games.cards.CardArray;
 import uk.co.essarsoftware.games.cards.SortableCardArray;
+import uk.co.essarsoftware.par.engine.CardNotFoundException;
 
 /**
  * Created with IntelliJ IDEA.
@@ -25,13 +26,12 @@ class Hand
         cards.addAll(cards);
     }
 
-    public void discard(Card card) {
+    public void discard(Card card) throws CardNotFoundException {
         if(card == null) {
             throw new IllegalArgumentException("Cannot discard null");
         }
         if(! cards.contains(card)) {
-            // TODO Change to CardNotFoundException
-            throw new IllegalArgumentException("Card not found in hand");
+            throw new CardNotFoundException("Card not found in hand", card, null);
         }
         cards.remove(card);
     }
@@ -45,6 +45,10 @@ class Hand
             throw new IllegalArgumentException("Card already in hand");
         }
         cards.add(card);
+    }
+    
+    public Card[] getCards() {
+        return cards.getCards();
     }
 
     public void moveCardDown(Card card) {

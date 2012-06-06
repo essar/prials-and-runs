@@ -19,15 +19,35 @@ class PlayImpl implements Play
         return false;
     }
 
-    Card[] allowableCards() {
-        return new Card[0];
-    }
-
     void init(Card[] cards) {
 
     }
 
+    public Card[] getAllowableCards() {
+        return new Card[0];
+    }
+
     public Card[] getCards() {
         return cards.getCards();
+    }
+
+    @Override
+    public boolean isInitialised() {
+        return false;  //To change body of implemented methods use File | Settings | File Templates.
+    }
+
+    @Override
+    public boolean isPrial() {
+        return false;  //To change body of implemented methods use File | Settings | File Templates.
+    }
+
+    @Override
+    public boolean isRun() {
+        return false;  //To change body of implemented methods use File | Settings | File Templates.
+    }
+
+    @Override
+    public int size() {
+        return 0;  //To change body of implemented methods use File | Settings | File Templates.
     }
 }

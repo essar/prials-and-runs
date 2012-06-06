@@ -57,15 +57,16 @@ public interface Engine
      * @param player the <tt>Player</tt> to reset.  Must be the current player and in <tt>PLAYING</tt> state.
      * @throws EngineException if a pre-condition fails or an error occurs within the engine.
      */
-    public void reset(Player player) throws EngineException;
+    public void resetPlays(Player player) throws EngineException;
 
     /**
      * Request to buy the top card from the discard pile on the table.  Buys are not allowed in PP round or in turn 1 of any round.
      * @param player the <tt>Player</tt> to buy the card from.  Must be the current player and in <tt>PICKUP</tt> state.
      * @param buyer the <tt>Player</tt> who is buying this card.  Must not be the current player and must be in <tt>WATCHING</tt> state.
+     * @return <tt>true</tt> if the buy request is valid, <tt>false</tt> otherwise.
      * @throws EngineException if a pre-condition fails or an error occurs within the engine.
      */
-    public void buy(Player player, Player buyer) throws EngineException;
+    public boolean buy(Player player, Player buyer) throws EngineException;
 
     /**
      * Approve the buy request received.

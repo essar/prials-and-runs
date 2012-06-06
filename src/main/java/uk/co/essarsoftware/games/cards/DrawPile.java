@@ -15,11 +15,11 @@ public class DrawPile extends Pile
 
     }
 
-    void add(Pack pack) {
+    public void add(Pack pack) {
         cards.addAll(pack);
     }
 
-    public CardArray[] deal(int hands, int handSize) {
+    /*public CardArray[] deal(int hands, int handSize) {
         CardArray[] hs = new CardArray[hands];
         for(int i = 0; i < handSize; i ++) {
             for(int ii = 0; ii < hands; ii ++) {
@@ -30,7 +30,7 @@ public class DrawPile extends Pile
             }
         }
         return hs;
-    }
+    }*/
 
     public void shuffle() {
         Collections.shuffle(cards);

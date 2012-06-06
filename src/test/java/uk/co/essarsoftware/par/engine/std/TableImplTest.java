@@ -47,7 +47,7 @@ public class TableImplTest
 
     @Test
     public void testDefaultPlays() {
-        assertEquals("Plays size", 0, underTest.getPlays().length);
+        assertEquals("Plays size", 0, underTest.getSeats().length);
     }
 
     @Test
@@ -61,12 +61,12 @@ public class TableImplTest
     }
 
     @Test(expected = IllegalArgumentException.class)
-    public void testInitRoundNull() {
-        underTest.initRound(null);
+    public void testInitialiseRoundNull() {
+        underTest.initialiseRound(null);
     }
 
 
-    public void testInitRoundPP() {
-        underTest.initRound(Round.PP);
+    public void testInitialiseRoundPP() {
+        underTest.initialiseRound(Round.PP);
     }
 }

@@ -11,5 +11,15 @@ import uk.co.essarsoftware.games.cards.Card;
  */
 public interface Play
 {
+    public Card[] getAllowableCards();
+    
     public Card[] getCards();
+
+    public boolean isInitialised();
+
+    public boolean isPrial();
+
+    public boolean isRun();
+    
+    public int size();
 }
