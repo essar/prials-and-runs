@@ -5,6 +5,7 @@ package uk.co.essarsoftware.games.cards;
  */
 public class TestPack extends Pack
 {
+    static long packID = 13579L;
     /**
      * Create a new pack from a list of cards.
      * @param cards a list of <tt>Card</tt>s to hold in the pack.
@@ -13,8 +14,13 @@ public class TestPack extends Pack
         super();
 
         for(Card c : cards) {
-            add(new Card(13579, c.getSuit(), c.getValue()));
+            super.add(new Card(packID, c.getSuit(), c.getValue()));
         }
+    }
+    
+    @Override
+    public boolean add(Card c) {
+        return super.add(new Card(packID, c.getSuit(), c.getValue()));
     }
 
     /**
@@ -22,7 +28,7 @@ public class TestPack extends Pack
      * @param card the <tt>Card</tt> to look for.
      * @return a <tt>Card</tt> from the pack that matches the card supplied, or null if the card is not in the pack.
      */
-    public Card getCard(Card card) {
+    public Card findCard(Card card) {
         for(Card c : this) {
             if(c.sameCard(card)) {
                 return c;

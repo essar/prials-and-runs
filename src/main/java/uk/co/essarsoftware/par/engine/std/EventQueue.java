@@ -18,4 +18,26 @@ class EventQueue extends ArrayBlockingQueue<GameEvent>
     public EventQueue() {
         super(Q_SIZE);
     }
+
+    @Override
+    public void clear() {
+        synchronized(this) {
+            super.clear();
+        }
+    }
+    
+    public GameEvent nextEvent() {
+        synchronized(this) {
+            try {
+                return take();
+            } catch(InterruptedException ie) {
+                return null;
+            } finally {
+                if(isEmpty()) {
+                    // Notify any waiting threads
+                    notifyAll();
+                }
+            }
+        }
+    }
 }

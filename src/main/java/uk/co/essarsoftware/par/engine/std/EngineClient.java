@@ -23,7 +23,7 @@ class EngineClient implements GameClient
     private final GameImpl game;
     private final PlayerImpl player;
 
-    final EventQueue queue;
+    private final EventQueue queue;
 
     public EngineClient(EngineImpl engine, GameImpl game, PlayerImpl player) {
         this.engine = engine;
@@ -32,7 +32,36 @@ class EngineClient implements GameClient
         
         queue = new EventQueue();
     }
-
+    
+    boolean waitAndClear(long wait) {
+        synchronized(queue) {
+            try {
+                // Check if queue is already empty
+                log.debug(String.format("[%s] Queue has %d events remaining", player, queue.size()));
+                if(queue.isEmpty()) {
+                    return true;
+                }
+                // Wait to see if it clears
+                log.debug(String.format("[%s] Waiting %d ms for the queue to clear", player, wait));
+                long start = System.currentTimeMillis();
+                while(!queue.isEmpty() && System.currentTimeMillis() < (start + wait)) {
+                    queue.wait(wait + 10);
+                }
+                // Check if queue is empty now
+                log.debug(String.format("[%s] Queue has %d events remaining", player, queue.size()));
+                if(queue.isEmpty()) {
+                    return true;
+                }
+                // Clear remaining entries
+                log.warn(String.format("[%s] Clearing %d remaining events from queue", player, queue.size()));
+                queue.clear();
+            } catch(InterruptedException ie) {
+                // Do nothing
+            }
+            return queue.isEmpty();
+        }
+    }
+    
     boolean addEvent(GameEvent evt) {
         boolean ret = queue.add(evt);
         log.debug(String.format("[%s] Adding %s, %d events on queue.", player, evt, queue.size()));
@@ -43,19 +72,7 @@ class EngineClient implements GameClient
     }
     
     GameEvent getNextGameEvent() {
-        synchronized(queue) {
-            try {
-                GameEvent evt = queue.take();
-                queue.notifyAll();
-                return evt;
-            } catch(InterruptedException ie) {
-                return null;
-            }
-        }
-    }
-    
-    int getQueueSize() {
-        return queue.size();
+        return queue.nextEvent();
     }
 
     @Override
@@ -194,7 +211,7 @@ class EngineClient implements GameClient
         if(player == null) {
             throw new IllegalStateException("Client has not been initialized with a Player");
         }
-        return player.getHand().getCards();
+        return player.getHand();
     }
 
     @Override

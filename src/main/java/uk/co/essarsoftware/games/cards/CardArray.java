@@ -83,4 +83,15 @@ public class CardArray extends ArrayList<Card>
     public Card[] getCards() {
         return toArray(new Card[size()]);
     }
+    
+    @Override
+    public String toString() {
+        StringBuffer buf = new StringBuffer();
+        buf.append("|");
+        for(Card c : this) {
+            buf.append(c);
+            buf.append("|");
+        }
+        return new String(buf);
+    }
 }

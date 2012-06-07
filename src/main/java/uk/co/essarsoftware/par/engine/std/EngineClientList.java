@@ -12,4 +12,14 @@ import java.util.HashMap;
  */
 class EngineClientList extends HashMap<PlayerImpl, EngineClient>
 {
+    void emptyQueues(long wait) {
+
+        // Make sure the event queues for each player are empty
+        for(EngineClient cli : values()) {
+
+
+            cli.waitAndClear(2000L);
+        }
+
+    }
 }

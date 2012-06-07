@@ -4,6 +4,7 @@ import uk.co.essarsoftware.games.cards.Card;
 import uk.co.essarsoftware.games.cards.CardArray;
 import uk.co.essarsoftware.games.cards.SortableCardArray;
 import uk.co.essarsoftware.par.engine.CardNotFoundException;
+import uk.co.essarsoftware.par.engine.DuplicateCardException;
 
 /**
  * Created with IntelliJ IDEA.
@@ -15,7 +16,6 @@ import uk.co.essarsoftware.par.engine.CardNotFoundException;
 class Hand
 {
     private SortableCardArray cards;
-
 
     boolean contains(Card card) {
         return cards.contains(card);
@@ -36,13 +36,12 @@ class Hand
         cards.remove(card);
     }
 
-    public void pickup(Card card) {
+    public void pickup(Card card) throws DuplicateCardException {
         if(card == null) {
             throw new IllegalArgumentException("Cannot pickup null");
         }
         if(cards.contains(card)) {
-            // TODO Change to sensible exception
-            throw new IllegalArgumentException("Card already in hand");
+            throw new DuplicateCardException("Card already in hand", card, null);
         }
         cards.add(card);
     }

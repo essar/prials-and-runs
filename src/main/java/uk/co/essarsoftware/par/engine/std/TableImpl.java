@@ -45,6 +45,11 @@ class TableImpl implements Table
     }
     
     TableSeat getSeat(PlayerImpl player) {
+        // Validate arguments
+        if(player == null) {
+            log.warn(String.format("Attempting to find a seat for null player"));
+            return null;
+        }
         if(! seats.containsPlayer(player)) {
             log.warn(String.format("Could not find a seat at the table for %s", player));
             return null;
@@ -55,7 +60,7 @@ class TableImpl implements Table
     void removeSeat(PlayerImpl player) {
         // Validate arguments
         if(player == null) {
-            throw new IllegalArgumentException("Cannot remove null player from table");
+            log.warn(String.format("Attempting to remove seat for a null player"));
         }
         if(seats.remove(player) == null) {
             log.warn(String.format("Could not find seat for %s", player));
@@ -78,17 +83,24 @@ class TableImpl implements Table
         }
 
         // Flip top draw card to discard pile
-        discardPile.discard(drawPile.pickup());
+        if(drawPile.size() > 0) {
+            discardPile.discard(drawPile.pickup());
+        }
     }
 
     CardArray[] deal() {
         CardArray[] hands = new CardArray[seats.size()];
-        for(int i = 0; i < handSize; i ++) {
-            for(int ii = 0; ii < hands.length; ii ++) {
-                if(hands[ii] == null) {
-                    hands[ii] = new CardArray();
+        int cardsRequired = hands.length * handSize;
+        if(drawPile.size() < cardsRequired) {
+            log.warn(String.format("Unable to deal cards, %d cards in pile, %d needed", drawPile.size(), cardsRequired));
+        } else {
+            for(int i = 0; i < handSize; i ++) {
+                for(int ii = 0; ii < hands.length; ii ++) {
+                    if(hands[ii] == null) {
+                        hands[ii] = new CardArray();
+                    }
+                    hands[ii].add(pickupDraw());
                 }
-                hands[ii].add(pickupDraw());
             }
         }
         return hands;
@@ -103,7 +115,7 @@ class TableImpl implements Table
         int minDeckSize = (int) ((double) seats.size() * (double) handSize * overDealFactor);
         log.debug(String.format("%d cards are required as a minimum.", minDeckSize));
 
-        while(drawPile.size() < minDeckSize) {
+        while(drawPile.size() <= minDeckSize) {
             drawPile.add(Pack.generatePackWithJokers());
             log.debug(String.format("Draw pile now %d cards, minimum of %d needed.", drawPile.size(), minDeckSize));
         }
@@ -165,15 +177,21 @@ class TableImpl implements Table
 
     @Override
     public PlayImpl[] getPlays(Player player) {
-        if(! seats.containsPlayer(player)) {
-            log.warn(String.format("Could not find a seat at the table for %s", player));
+        // Validate arguments
+        if(player == null) {
+            log.warn(String.format("Attempting to get plays for plays for null player"));
             return null;
         }
-        return seats.getSeat(player).getPlays();
+        if(! seats.containsPlayer(player)) {
+            log.warn(String.format("Could not find plays for %s", player));
+            return null;
+        }
+        TableSeat s = seats.getSeat(player);
+        return (s == null ? new PlayImpl[0] : s.getPlays());
     }
 
     @Override
-    public PlayImpl[] getSeats() {
+    public PlayImpl[] getPlays() {
         return seats.getAllPlays();
     }
 
@@ -182,7 +200,9 @@ class TableImpl implements Table
         public PlayImpl[] getAllPlays() {
             ArrayList<PlayImpl> allPlays = new ArrayList<PlayImpl>();
             for(TableSeat ts : values()) {
-                allPlays.addAll(ts);
+                if(ts != null) {
+                    allPlays.addAll(ts);
+                }
             }
             return allPlays.toArray(new PlayImpl[allPlays.size()]);
         }

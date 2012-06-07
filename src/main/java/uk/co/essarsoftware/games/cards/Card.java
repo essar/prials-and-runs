@@ -7,7 +7,7 @@ package uk.co.essarsoftware.games.cards;
  * Time: 12:39
  * To change this template use File | Settings | File Templates.
  */
-public class Card
+public class Card implements Comparable<Card>
 {
     private final Suit suit;
     private final Value value;
@@ -29,6 +29,18 @@ public class Card
         this.suit = suit;
         this.value = value;
     }
+    
+    @Override
+    public int compareTo(Card c) {
+        if(c == null) {
+            return 1;
+        }
+        if(suit == c.suit) {
+            return value.compareTo(c.value);
+        } else {
+            return suit.compareTo(c.suit);
+        }
+    }
 
     /**
      * Checks if two card objects are the same.
@@ -36,6 +48,7 @@ public class Card
      * @return <tt>true</tt> if both <tt>Card</tt>s are from the same pack and have same suit and value, <tt>false</tt>
      * otherwise, or if <tt>c</tt> is null, not a <tt>Card</tt> object or does not have a pack identifier.
      */
+    @Override
     public boolean equals(Object o) {
         if(o == null) {
             return false;
@@ -81,7 +94,11 @@ public class Card
     public boolean sameValue(Card c) {
         return c != null && c.value.equals(value);
     }
-
+    
+    @Override
+    public String toString() {
+        return value + "" + suit;
+    }
 
     public static Card createCard(Suit suit, Value value) {
         return new Card(suit, value);
@@ -89,11 +106,25 @@ public class Card
 
     public enum Suit
     {
-        CLUBS, DIAMONDS, HEARTS, SPADES
+        CLUBS, DIAMONDS, HEARTS, SPADES;
+
+        public String toString() {
+            return name().substring(0, 1);
+        }
     }
 
     public enum Value
     {
-        ACE, TWO, THREE, FOUR, FIVE, SIX, SEVEN, EIGHT, NINE, TEN, JACK, QUEEN, KING
+        ACE, TWO, THREE, FOUR, FIVE, SIX, SEVEN, EIGHT, NINE, TEN, JACK, QUEEN, KING;
+        
+        public String toString() {
+            switch(this) {
+                case ACE: return "A";
+                case JACK: return "J";
+                case QUEEN: return "Q";
+                case KING: return "K";
+                default: return "" + ordinal();
+            }
+        }
     }
 }

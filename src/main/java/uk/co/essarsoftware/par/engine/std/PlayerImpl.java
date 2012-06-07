@@ -3,9 +3,8 @@ package uk.co.essarsoftware.par.engine.std;
 import org.apache.log4j.Logger;
 import uk.co.essarsoftware.games.cards.Card;
 import uk.co.essarsoftware.games.cards.CardArray;
-import uk.co.essarsoftware.par.engine.Player;
-import uk.co.essarsoftware.par.engine.PlayerState;
-import uk.co.essarsoftware.par.engine.Table;
+import uk.co.essarsoftware.games.cards.SortableCardArray;
+import uk.co.essarsoftware.par.engine.*;
 
 /**
  * Created with IntelliJ IDEA.
@@ -23,33 +22,80 @@ class PlayerImpl implements Player
     private PlayerState playerState;
     private String playerName;
 
-    private final Hand hand;
+    private final SortableCardArray hand;
+
+    static {
+        log.debug("** DEBUG ENABLED, card information may appear in log output **");
+    }
 
     public PlayerImpl(String playerName) {
         this.playerName = playerName;
-        this.hand = new Hand();
+        this.hand = new SortableCardArray();
         this.playerState = PlayerState.INIT;
         this.down = false;
-    }
-
-    void clearPenaltyCard() {
-        this.penaltyCard = null;
-    }
-
-    Card getPenaltyCard() {
-        return penaltyCard;
-    }
-
-    Hand getHand() {
-        return hand;
+        
+        log.debug(String.format("PlayerImpl created for %s", playerName));
     }
 
     void deal(CardArray cards) {
-        hand.setCards(cards);
+        if(cards == null) {
+            throw new IllegalArgumentException("Cannot deal null");
+        }
+        synchronized(hand) {
+            hand.clear();
+            hand.addAll(cards);
+            log.debug(String.format("[%s] hand now: %s", this, hand));
+        }
+    }
+
+    Card[] getHand() {
+        return hand.getCards();
+    }
+    
+    //boolean handContains(Card card) {
+    //    return hand.contains(card);
+    //}
+
+    void discard(Card card) throws CardNotFoundException {
+        if(card == null) {
+            throw new IllegalArgumentException("Cannot discard null");
+        }
+        synchronized(hand) {
+            if(! hand.contains(card)) {
+                throw new CardNotFoundException("Card not found in hand", card, this);
+            }
+            hand.remove(card);
+            log.debug(String.format("[%s] discarded %s", this, card));
+            log.debug(String.format("[%s] hand now: %s", this, hand));
+        }
+    }
+    
+    void pickup(Card card) throws DuplicateCardException {
+        if(card == null) {
+            throw new IllegalArgumentException("Cannot pickup null");
+        }
+        synchronized(hand) {
+            if(hand.contains(card)) {
+                throw new DuplicateCardException("Card already in hand", card, this);
+            }
+            hand.add(card);
+            log.debug(String.format("[%s] picked up %s", this, card));
+            log.debug(String.format("[%s] hand now: %s", this, hand));
+        }
     }
 
     void setDown(boolean down) {
         this.down = down;
+        log.debug(String.format("[%s] set %s", this, (down ? "down" : "not down")));
+    }
+
+    void clearPenaltyCard() {
+        this.penaltyCard = null;
+        log.debug(String.format("[%s] penaltyCard set to %s", this, penaltyCard));
+    }
+
+    Card getPenaltyCard() {
+        return penaltyCard;
     }
 
     void setPenaltyCard(Card penaltyCard) {
@@ -57,13 +103,17 @@ class PlayerImpl implements Player
             throw new IllegalArgumentException("Cannot set penaltyCard to null");
         }
         this.penaltyCard = penaltyCard;
+        log.debug(String.format("[%s] penaltyCard set to %s", this, penaltyCard));
     }
 
     void setPlayerState(PlayerState playerState) {
         if(playerState == null) {
             throw new IllegalArgumentException("Cannot set playerState to null");
         }
-        this.playerState = playerState;
+        synchronized(this) {
+            this.playerState = playerState;
+            log.debug(String.format("[%s] playerState set to %s", this, playerState));
+        }
     }
 
     @Override
@@ -89,5 +139,10 @@ class PlayerImpl implements Player
     @Override
     public boolean isDown() {
         return down;
+    }
+    
+    @Override
+    public String toString() {
+        return playerName;
     }
 }

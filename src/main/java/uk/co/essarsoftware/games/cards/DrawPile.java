@@ -19,19 +19,6 @@ public class DrawPile extends Pile
         cards.addAll(pack);
     }
 
-    /*public CardArray[] deal(int hands, int handSize) {
-        CardArray[] hs = new CardArray[hands];
-        for(int i = 0; i < handSize; i ++) {
-            for(int ii = 0; ii < hands; ii ++) {
-                if(hs[ii] == null) {
-                    hs[ii] = new CardArray();
-                }
-                hs[ii].add(cards.pop());
-            }
-        }
-        return hs;
-    }*/
-
     public void shuffle() {
         Collections.shuffle(cards);
     }
