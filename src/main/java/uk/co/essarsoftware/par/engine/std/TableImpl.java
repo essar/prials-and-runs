@@ -10,11 +10,9 @@ import java.util.ArrayList;
 import java.util.HashMap;
 
 /**
- * Created with IntelliJ IDEA.
- * User: sroberts
- * Date: 05/06/12
- * Time: 16:14
- * To change this template use File | Settings | File Templates.
+ * Table implementation class.
+ * @author Steve Roberts <steve.roberts@essarsoftware.co.uk>
+ * @version 1.0 (07-Jun-12)
  */
 class TableImpl implements Table
 {

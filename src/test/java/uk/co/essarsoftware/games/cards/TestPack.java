@@ -17,7 +17,7 @@ public class TestPack extends Pack
             super.add(new Card(packID, c.getSuit(), c.getValue()));
         }
     }
-    
+
     @Override
     public boolean add(Card c) {
         return super.add(new Card(packID, c.getSuit(), c.getValue()));

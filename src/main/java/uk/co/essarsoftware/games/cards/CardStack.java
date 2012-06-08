@@ -88,4 +88,15 @@ class CardStack extends Stack<Card>
         }
         super.setElementAt(card, index);
     }
+
+    @Override
+    public String toString() {
+        StringBuffer buf = new StringBuffer();
+        buf.append("|");
+        for(Card c : this) {
+            buf.append(c);
+            buf.append("|");
+        }
+        return new String(buf);
+    }
 }

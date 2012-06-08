@@ -1,11 +1,10 @@
 package uk.co.essarsoftware.games.cards;
 
 /**
- * Created with IntelliJ IDEA.
- * User: sroberts
- * Date: 05/06/12
- * Time: 12:39
- * To change this template use File | Settings | File Templates.
+ * <p>Class representing a standard playing card.</p> Card objects must have a suit (CLUBS, DIAMONDS, HEARTS or SPADES) and value (ACE-KING).</p>
+ * <p>Cards are optionally generated with an internal PackID that uniquely identifies a card instance within multi-pack scenarios.</p>
+ * @author Steve Roberts <steve.roberts@essarsoftware.co.uk>
+ * @version 1.0 (07-Jun-12)
  */
 public class Card implements Comparable<Card>
 {
@@ -14,31 +13,49 @@ public class Card implements Comparable<Card>
 
     final long packID;
 
+    /**
+     * Create a new card object with specified suit and value.
+     * @param suit the <tt>Suit</tt> of this card.
+     * @param value the <tt>Value</tt> of this card.
+     */
     private Card(Suit suit, Value value) {
-        this.packID = 0;
-        this.suit = suit;
-        this.value = value;
+        this(0, suit, value);
     }
 
-    protected Card(long packID) {
-        this(packID, null, null);
-    }
-
+    /**
+     * Create a new card object with specified suit and value, belonging to the specified pack.
+     * @param packID unique pack identifier for the pack this card belongs to.
+     * @param suit the <tt>Suit</tt> of this card.
+     * @param value the <tt>Value</tt> of this card.
+     */
     Card(long packID, Suit suit, Value value) {
         this.packID = packID;
         this.suit = suit;
         this.value = value;
     }
-    
+
+    /**
+     * Compares two cards for sorting.  Default sort is by suit, then value.
+     * @param c another <tt>Card</tt> to compare this object with.
+     * @return an integer defining the relative position of this object to the specified object.
+     */
     @Override
     public int compareTo(Card c) {
         if(c == null) {
             return 1;
         }
-        if(suit == c.suit) {
-            return value.compareTo(c.value);
+        // Two unbounded jokers equal each other
+        if(isJoker() && !isBoundJoker() && c.isJoker() && !c.isBoundJoker()) {
+            return 0;
+        }
+        // Unbounded joker so always first
+        if(isJoker() && !isBoundJoker()) {
+            return -1;
+        }
+        if(getSuit() == c.getSuit()) {
+            return (c.getValue() == null ? 1 : getValue().compareTo(c.getValue()));
         } else {
-            return suit.compareTo(c.suit);
+            return (c.getSuit() == null ? 1 : getSuit().compareTo(c.getSuit()));
         }
     }
 
@@ -50,49 +67,77 @@ public class Card implements Comparable<Card>
      */
     @Override
     public boolean equals(Object o) {
+        // Cannot be equal to null
         if(o == null) {
             return false;
         }
+        // Cannot equal non-card
         if(! (o instanceof Card)) {
             return false;
         }
         Card c = (Card) o;
-        return ((c.packID | packID) != 0 && c.packID == packID && sameCard(c));
+        return ((packID | c.packID) != 0 && c.packID == packID && sameCard(c));
     }
 
+    /**
+     * Returns the suit of this card.
+     * @return the <tt>Suit</tt> of this card.
+     */
     public Suit getSuit() {
         return suit;
     }
 
+    /**
+     * Returns the value of this card.
+     * @return the <tt>Value</tt> of this card.
+     */
     public Value getValue() {
         return value;
+    }
+
+    public boolean isBoundJoker() {
+        return false;
+    }
+
+    /**
+     * Indicates if this card is a Joker.
+     * @return Always returns false.
+     */
+    public boolean isJoker() {
+        return false;
     }
 
     /**
      * Checks if another card has the same suit and value as this one.
      * @param c another <tt>Card</tt> object to check.
-     * @return <tt>true</tt> if both cards have the same suit and value, <tt>false</tt> otherwise, or if <tt>c</tt> is null.
+     * @return <tt>true</tt> if both cards have the same suit and value or either card is a joker; <tt>false</tt> otherwise, or if <tt>c</tt> is null.
      */
     public boolean sameCard(Card c) {
-        return sameSuit(c) && sameValue(c);
+        return c != null && ((isJoker() && !isBoundJoker())
+                            || (c.isJoker() && !c.isBoundJoker())
+                            || (sameSuit(c) && sameValue(c)));
     }
 
     /**
      * Checks if another card has the same suit as this one.
      * @param c another <tt>Card</tt> object to check.
-     * @return <tt>true</tt> if both cards have the same suit, <tt>false</tt> otherwise, or if <tt>c</tt> is null.
+     * @return <tt>true</tt> if both cards have the same suit or either card is a joker; <tt>false</tt> otherwise, or if <tt>c</tt> is null.
      */
     public boolean sameSuit(Card c) {
-        return (c != null && c.suit.equals(suit));
+        return c != null && ((isJoker() && !isBoundJoker())
+                            || (c.isJoker() && !c.isBoundJoker())
+                            || getSuit().equals(c.getSuit()));
     }
 
     /**
      * Checks if another card has the same value as this one.
      * @param c another <tt>Card</tt> object to check.
-     * @return <tt>true</tt> if both cards have the same value, <tt>false</tt> otherwise, or if <tt>c</tt> is null.
+     * @return <tt>true</tt> if both cards have the same value or either card is a joker; <tt>false</tt> otherwise, or if <tt>c</tt> is null.
      */
     public boolean sameValue(Card c) {
-        return c != null && c.value.equals(value);
+        return c != null && ((isJoker() && !isBoundJoker())
+                            || (c.isJoker() && !c.isBoundJoker())
+                            || getValue().equals(c.getValue()));
     }
     
     @Override
@@ -100,10 +145,29 @@ public class Card implements Comparable<Card>
         return value + "" + suit;
     }
 
+    /**
+     * Create a new <tt>Card</tt> instance, with the specified suit and value.
+     * @param suit the <tt>Suit</tt> of this card. Cannot be null.
+     * @param value the <tt>Value</tt> of this card. Cannot be null.
+     * @return the <tt>Card</tt> object created, unassociated with any pack.
+     */
     public static Card createCard(Suit suit, Value value) {
+        if(suit == null) {
+            throw new IllegalArgumentException("Cannot create card with null suit");
+        }
+        if(value == null) {
+            throw new IllegalArgumentException("Cannot create card with null value");
+        }
         return new Card(suit, value);
     }
 
+    public static Joker createJoker() {
+        return new Joker();
+    }
+
+    /**
+     * Enumeration defining possible card suits.
+     */
     public enum Suit
     {
         CLUBS, DIAMONDS, HEARTS, SPADES;
@@ -113,6 +177,9 @@ public class Card implements Comparable<Card>
         }
     }
 
+    /**
+     * Enumeration defining possible card values.
+     */
     public enum Value
     {
         ACE, TWO, THREE, FOUR, FIVE, SIX, SEVEN, EIGHT, NINE, TEN, JACK, QUEEN, KING;
@@ -125,6 +192,85 @@ public class Card implements Comparable<Card>
                 case KING: return "K";
                 default: return "" + ordinal();
             }
+        }
+    }
+
+
+
+    public static class Joker extends Card
+    {
+        private static int nextSerial = 0;
+
+        private Card boundCard;
+        private int serial;
+
+        private Joker() {
+            this(0);
+            serial = ++ nextSerial;
+        }
+
+        /**
+         * Create a new Joker, associated with the specified pack.
+         * @param packID unique pack identifier for the pack this card belongs to.
+         */
+        Joker(long packID) {
+            super(packID, null, null);
+            boundCard = null;
+        }
+
+        /**
+         * Bind this Joker to another card.
+         * @param boundCard the <tt>Card</tt> to bind this Joker to.
+         */
+        public void bindTo(Card boundCard) {
+            this.boundCard = boundCard;
+        }
+
+        @Override
+        public boolean equals(Object o) {
+            // Cannot be equal to null
+            if(o == null) {
+                return false;
+            }
+            // Cannot equal non-joker
+            if(! (o instanceof Joker)) {
+                return false;
+            }
+            Joker j = (Joker) o;
+            return (super.equals(j) && serial == j.serial);
+        }
+
+        @Override
+        public Suit getSuit() {
+            return (boundCard == null ? null : boundCard.getSuit());
+        }
+
+        @Override
+        public Value getValue() {
+            return (boundCard == null ? null : boundCard.getValue());
+        }
+
+        /**
+         * Indicates if this Joker is bound to another card.
+         * @return <tt>true</tt> if this Joker is bound to a card, false otherwise.
+         */
+        @Override
+        public boolean isBoundJoker() {
+            return boundCard != null;
+        }
+
+        /**
+         * Indicates if this card is a Joker.
+         * @return always returns true.
+         */
+        @Override
+        public boolean isJoker() {
+            return true;
+        }
+
+        @Override
+        public String toString() {
+            return String.format("J<%s>", (boundCard == null ? "*" : boundCard));
         }
     }
 }

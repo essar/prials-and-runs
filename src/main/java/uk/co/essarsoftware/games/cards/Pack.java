@@ -48,8 +48,8 @@ public class Pack extends CardStack
      */
     public static Pack generatePackWithJokers() {
         Pack p = generatePack();
-        p.add(new Joker(p.packID));
-        p.add(new Joker(p.packID));
+        p.add(new Card.Joker(p.packID));
+        p.add(new Card.Joker(p.packID));
 
         assert(p.size() == 54);
         return p;

@@ -6,11 +6,9 @@ import uk.co.essarsoftware.par.engine.Play;
 import uk.co.essarsoftware.par.engine.Player;
 
 /**
- * Created by IntelliJ IDEA.
- * User: robsteve
- * Date: 06/06/12
- * Time: 13:29
- * To change this template use File | Settings | File Templates.
+ * Interface defining methods available to game clients.
+ * @author Steve Roberts <steve.roberts@essarsoftware.co.uk>
+ * @version 1.0 (07-Jun-12)
  */
 public interface GameClient extends Game, Player
 {
