@@ -199,14 +199,14 @@ public class Card implements Comparable<Card>
 
     public static class Joker extends Card
     {
-        private static int nextSerial = 0;
+        private static int nextSerial = 1;
 
         private Card boundCard;
         private int serial;
 
         private Joker() {
             this(0);
-            serial = ++ nextSerial;
+            serial = nextSerial ++;
         }
 
         /**

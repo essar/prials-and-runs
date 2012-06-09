@@ -9,6 +9,8 @@ package uk.co.essarsoftware.par.engine;
  */
 public interface Game
 {
+    public GameController getController();
+
     public Player getCurrentPlayer();
 
     public Round getCurrentRound();

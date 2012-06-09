@@ -4,16 +4,15 @@ import org.apache.log4j.Logger;
 import uk.co.essarsoftware.games.cards.Card;
 import uk.co.essarsoftware.par.client.GameClient;
 import uk.co.essarsoftware.par.engine.*;
-import uk.co.essarsoftware.par.engine.events.GameEvent;
+import uk.co.essarsoftware.par.engine.events.*;
 
 import java.util.Arrays;
 
 /**
- * Created by IntelliJ IDEA.
- * User: robsteve
- * Date: 06/06/12
- * Time: 15:19
- * To change this template use File | Settings | File Templates.
+ * Client implementation that provides methods from the <tt>Engine</tt>, <tt>Game</tt>, and <tt>Player</tt> objects to
+ * client classes.
+ * @author Steve Roberts <steve.roberts@essarsoftware.co.uk>
+ * @version 1.0 (07-Jun-12)
  */
 class EngineClient implements GameClient
 {
@@ -22,59 +21,67 @@ class EngineClient implements GameClient
     private final EngineImpl engine;
     private final GameImpl game;
     private final PlayerImpl player;
+    private final PlayerUI ui;
 
+    private final EngineClientAgent agt;
     private final EventQueue queue;
 
-    public EngineClient(EngineImpl engine, GameImpl game, PlayerImpl player) {
+    /**
+     * Create a new <tt>EngineClient</tt>
+     * @param engine the current <tt>Engine</tt> instance.
+     * @param game the current <tt>Game</tt> instance.
+     * @param player the <tt>Player</tt> this client relates to.
+     * @param ui the <tt>PlayerUI</tt> that this client controls.
+     */
+    public EngineClient(EngineImpl engine, GameImpl game, PlayerImpl player, PlayerUI ui) {
         this.engine = engine;
         this.game = game;
         this.player = player;
-        
+        this.ui = ui;
+
+        agt = new EngineClientAgent();
         queue = new EventQueue();
     }
-    
-    boolean waitAndClear(long wait) {
-        synchronized(queue) {
-            try {
-                // Check if queue is already empty
-                log.debug(String.format("[%s] Queue has %d events remaining", player, queue.size()));
-                if(queue.isEmpty()) {
-                    return true;
-                }
-                // Wait to see if it clears
-                log.debug(String.format("[%s] Waiting %d ms for the queue to clear", player, wait));
-                long start = System.currentTimeMillis();
-                while(!queue.isEmpty() && System.currentTimeMillis() < (start + wait)) {
-                    queue.wait(wait + 10);
-                }
-                // Check if queue is empty now
-                log.debug(String.format("[%s] Queue has %d events remaining", player, queue.size()));
-                if(queue.isEmpty()) {
-                    return true;
-                }
-                // Clear remaining entries
-                log.warn(String.format("[%s] Clearing %d remaining events from queue", player, queue.size()));
-                queue.clear();
-            } catch(InterruptedException ie) {
-                // Do nothing
-            }
-            return queue.isEmpty();
-        }
+
+    /**
+     * Get the <tt>EngineAgent</tt> associated with this client.
+     * @return an <tt>EngineAgent</tt> instance.
+     */
+    EngineAgent getAgent() {
+        return agt;
     }
-    
+
+    /**
+     * Add a <tt>GameEvent</tt> to the client's queue.
+     * @param evt a <tt>GameEvent</tt> object to queue.
+     * @return <tt>true</tt> if the event was queued successfully, false otherwise.
+     * @see EventQueue#add(uk.co.essarsoftware.par.engine.events.GameEvent)
+     */
     boolean addEvent(GameEvent evt) {
-        boolean ret = queue.add(evt);
+        boolean r = queue.add(evt);
         log.debug(String.format("[%s] Adding %s, %d events on queue.", player, evt, queue.size()));
         if(queue.remainingCapacity() < 5) {
             log.warn(String.format("[%s] Event queue capacity WARNING : %d events on queue, %d remaining.", player, queue.size(), queue.remainingCapacity()));
         }
-        return ret;
-    }
-    
-    GameEvent getNextGameEvent() {
-        return queue.nextEvent();
+        return r;
     }
 
+    /**
+     * Clear events from the client's queue. Method blocks until the queue is cleared.
+     * @see uk.co.essarsoftware.par.engine.std.EventQueue#clear()
+     */
+    void clearQueue() {
+        log.debug(String.format("[%s] Clearing queue (%d events queued)", player, queue.size()));
+        queue.clear();
+    }
+
+    /**
+     *
+     */
+    void endGame() {
+
+    }
+    
     @Override
     public Card approveBuy(Player buyer) {
         if(engine == null || player == null) {
@@ -84,8 +91,13 @@ class EngineClient implements GameClient
             log.debug(String.format("[%s] Approving buy from %s", player, buyer));
             return engine.approveBuy(player, buyer);
         } catch(EngineException ee) {
+            // Log exception
             log.error(String.format("[%s] Unable to approve buy from %s : %s", player, buyer, ee.getMessage()));
             log.debug(ee.getMessage(), ee);
+
+            // Inform UI of exception
+            ui.handleException(ee);
+
             return null;
         }
     }
@@ -99,8 +111,13 @@ class EngineClient implements GameClient
             log.debug(String.format("[%s] Requesting to buy %s from %s", player, card, currentPlayer));
             return engine.buy(currentPlayer, player);
         } catch(EngineException ee) {
+            // Log exception
             log.error(String.format("[%s] Unable to buy %s from %s : %s", player, card, currentPlayer, ee.getMessage()));
             log.debug(ee.getMessage(), ee);
+
+            // Inform UI of exception
+            ui.handleException(ee);
+
             return false;
         }
     }
@@ -114,8 +131,12 @@ class EngineClient implements GameClient
             log.debug(String.format("[%s] Discarding %s", player, card));
             engine.discard(player, card);
         } catch(EngineException ee) {
+            // Log exception
             log.error(String.format("[%s] Unable to discard %s : %s", player, card, ee.getMessage()));
             log.debug(ee.getMessage(), ee);
+
+            // Inform UI of exception
+            ui.handleException(ee);
         }
     }
 
@@ -128,8 +149,12 @@ class EngineClient implements GameClient
             log.debug(String.format("[%s] Pegging %s onto %s", player, card, play));
             engine.pegCard(player, play, card);
         } catch(EngineException ee) {
+            // Log exception
             log.error(String.format("[%s] Unable to peg %s onto %s : %s", player, card, play, ee.getMessage()));
             log.debug(ee.getMessage(), ee);
+
+            // Inform UI of exception
+            ui.handleException(ee);
         }
     }
 
@@ -142,8 +167,13 @@ class EngineClient implements GameClient
             log.debug(String.format("[%s] Picking up from discard pile", player));
             return engine.pickupDiscard(player);
         } catch(EngineException ee) {
+            // Log exception
             log.error(String.format("[%s] Unable to pickup from discard pile : %s", player, ee.getMessage()));
             log.debug(ee.getMessage(), ee);
+
+            // Inform UI of exception
+            ui.handleException(ee);
+
             return null;
         }
     }
@@ -157,8 +187,13 @@ class EngineClient implements GameClient
             log.debug(String.format("[%s] Picking up from draw pile", player));
             return engine.pickupDraw(player);
         } catch(EngineException ee) {
+            // Log exception
             log.error(String.format("[%s] Unable to pickup from draw pile : %s", player, ee.getMessage()));
             log.debug(ee.getMessage(), ee);
+
+            // Inform UI of exception
+            ui.handleException(ee);
+
             return null;
         }
     }
@@ -172,8 +207,12 @@ class EngineClient implements GameClient
             log.debug(String.format("[%s] Playing cards %s", player, Arrays.toString(cards)));
             engine.playCards(player, cards);
         } catch(EngineException ee) {
+            // Log exception
             log.error(String.format("[%s] Unable to play cards %s : %s", player, Arrays.toString(cards), ee.getMessage()));
             log.debug(ee.getMessage(), ee);
+
+            // Inform UI of exception
+            ui.handleException(ee);
         }
     }
 
@@ -186,8 +225,13 @@ class EngineClient implements GameClient
             log.debug(String.format("[%s] Rejecting buy from %s", player, buyer));
             return engine.rejectBuy(player, buyer);
         } catch(EngineException ee) {
+            // Log exception
             log.error(String.format("[%s] Unable to reject buy from %s : %s", player, buyer, ee.getMessage()));
             log.debug(ee.getMessage(), ee);
+
+            // Inform UI of exception
+            ui.handleException(ee);
+
             return null;
         }
     }
@@ -201,8 +245,12 @@ class EngineClient implements GameClient
             log.debug(String.format("[%s] Resetting plays", player));
             engine.resetPlays(player);
         } catch(EngineException ee) {
+            // Log exception
             log.error(String.format("[%s] Unable to reset plays : %s", player, ee.getMessage()));
             log.debug(ee.getMessage(), ee);
+
+            // Inform UI of exception
+            ui.handleException(ee);
         }
     }
 
@@ -236,6 +284,11 @@ class EngineClient implements GameClient
             throw new IllegalStateException("Client has not been initialized with a Player");
         }
         return player;
+    }
+
+    @Override
+    public GameController getController() {
+        throw new UnsupportedOperationException("Cannot obtain game controller in this way");
     }
 
     @Override
@@ -332,5 +385,98 @@ class EngineClient implements GameClient
             throw new IllegalStateException("Client has not been initialized with a Player");
         }
         return player.isDown();
+    }
+
+    /**
+     * Internal client that serially proceses <tt>GameEvent</tt>s stored on the client's queue.
+     */
+    private class EngineClientAgent extends Thread implements EngineAgent, GameEventProcessor
+    {
+        private boolean running = true;
+
+        /**
+         * Create a new <tt>EngineClientAgent</tt>.
+         */
+        EngineClientAgent() {
+            super("Agt-" + player);
+        }
+
+        @Override
+        public void processEvent(GameEvent evt) {
+            log.debug(String.format("[%s] Processing %s", player, evt.getClass().getName()));
+            boolean thisPlayer = player.equals(evt.getPlayer());
+
+            if(evt instanceof BuyApprovedEvent) {
+                BuyApprovedEvent baEvt = (BuyApprovedEvent) evt;
+                ui.buyApproved(baEvt.getPlayer(), baEvt.getBuyer(), baEvt.getCard(), thisPlayer);
+            }
+            if(evt instanceof BuyRejectedEvent) {
+                BuyRejectedEvent brEvt = (BuyRejectedEvent) evt;
+                ui.buyRejected(brEvt.getPlayer(), brEvt.getBuyer(), brEvt.getCard(), thisPlayer);
+            }
+            if(evt instanceof BuyRequestEvent) {
+                BuyRequestEvent brEvt = (BuyRequestEvent) evt;
+                ui.buyRequest(brEvt.getPlayer(), brEvt.getBuyer(), brEvt.getCard(), thisPlayer);
+            }
+            if(evt instanceof DiscardEvent) {
+                DiscardEvent dEvt = (DiscardEvent) evt;
+                ui.cardDiscarded(dEvt.getPlayer(), dEvt.getDiscard(), thisPlayer);
+            }
+            if(evt instanceof PegCardEvent) {
+                PegCardEvent pcEvt = (PegCardEvent) evt;
+                ui.cardPegged(pcEvt.getPlayer(), pcEvt.getPlay(), pcEvt.getCard(), thisPlayer);
+            }
+            if(evt instanceof PickupDiscardEvent) {
+                PickupDiscardEvent pdEvt = (PickupDiscardEvent) evt;
+                ui.discardPickup(pdEvt.getPlayer(), pdEvt.getPickup(), thisPlayer);
+            }
+            if(evt instanceof PickupDrawEvent) {
+                PickupDrawEvent pdEvt = (PickupDrawEvent) evt;
+                ui.drawPickup(pdEvt.getPlayer(), thisPlayer);
+            }
+            if(evt instanceof PlayCardsEvent) {
+                PlayCardsEvent pcEvt = (PlayCardsEvent) evt;
+                ui.cardsPlayed(pcEvt.getPlayer(), pcEvt.getPlays(), thisPlayer);
+            }
+            if(evt instanceof PlayerOutEvent) {
+                PlayerOutEvent poEvt = (PlayerOutEvent) evt;
+                ui.playerOut(poEvt.getPlayer(), thisPlayer);
+            }
+            if(evt instanceof PlayerStateChangeEvent) {
+                PlayerStateChangeEvent pscEvt = (PlayerStateChangeEvent) evt;
+                ui.playerStateChange(pscEvt.getPlayer(), pscEvt.getOldState(), pscEvt.getNewState(), thisPlayer);
+            }
+        }
+
+        @Override
+        public void run() {
+            log.info(String.format("[%s] agent starting", player));
+            while(running) {
+                try {
+                    GameEvent evt = queue.take();
+                    processEvent(evt);
+                } catch(InterruptedException ie) {
+                    running = false;
+                    log.debug(String.format("[%s] agent interrupted", player));
+                } catch(RuntimeException re) {
+                    // Log exception
+                    log.error(String.format("[%s] %s while processing game event: %s", player, re.getClass().getName(), re.getMessage()));
+                    log.debug(re.getMessage(), re);
+                }
+            }
+            log.info(String.format("[%s] agent stopping", player));
+        }
+
+        @Override
+        public void startAgent() {
+            running = true;
+            start();
+        }
+
+        @Override
+        public void stopAgent() {
+            running = false;
+            interrupt();
+        }
     }
 }

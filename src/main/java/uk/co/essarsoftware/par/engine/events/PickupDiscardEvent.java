@@ -10,15 +10,15 @@ import uk.co.essarsoftware.par.engine.Player;
  * Time: 16:05
  * To change this template use File | Settings | File Templates.
  */
-public class PickupEvent extends AbstractGameEvent
+public class PickupDiscardEvent extends AbstractGameEvent
 {
     private Card pickup;
-    
-    public PickupEvent(Player player) {
+
+    public PickupDiscardEvent(Player player) {
         this(player, null);
     }
-    
-    public PickupEvent(Player player, Card pickup) {
+
+    public PickupDiscardEvent(Player player, Card pickup) {
         super(player);
         this.pickup = pickup;
     }

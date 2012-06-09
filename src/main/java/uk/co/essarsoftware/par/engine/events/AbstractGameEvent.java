@@ -16,7 +16,8 @@ abstract class AbstractGameEvent implements GameEvent
     protected AbstractGameEvent(Player player) {
         this.player = player;
     }
-    
+
+    @Override
     public Player getPlayer() {
         return player;
     }

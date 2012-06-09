@@ -1,6 +1,7 @@
 package uk.co.essarsoftware.par.engine;
 
 import uk.co.essarsoftware.games.cards.Card;
+import uk.co.essarsoftware.par.client.GameClient;
 
 /**
  * Interface defining a class that controls the game play of a Prials And Runs game.
@@ -87,10 +88,12 @@ public interface Engine
     public Card rejectBuy(Player player, Player buyer) throws EngineException;
 
 
+    public GameClient createClient(Player player, PlayerUI ui);
+
     public void abortGame();
 
-    public void startGame();
+    public void startGame() throws EngineException;
 
-    public void startRound();
+    public void startRound() throws EngineException;
 
 }

@@ -12,28 +12,31 @@ import uk.co.essarsoftware.games.cards.Card;
 public interface PlayerUI
 {
 
-    public void buyApproved(Player player, Player buyer, Card card);
+    public void buyApproved(Player player, Player buyer, Card card, boolean thisPlayer);
     
-    public void buyRejected(Player player, Player buyer, Card card);
+    public void buyRejected(Player player, Player buyer, Card card, boolean thisPlayer);
 
-    public void buyRequest(Player player, Player buyer, Card card);
+    public void buyRequest(Player player, Player buyer, Card card, boolean thisPlayer);
 
-    public void cardDiscarded(Player player, Card card);
+    public void cardDiscarded(Player player, Card card, boolean thisPlayer);
 
-    public void cardPegged(Player player, Play play, Card card);
+    public void cardPegged(Player player, Play play, Card card, boolean thisPlayer);
 
-    public void cardsPlayed(Player player, Play play);
+    public void cardsPlayed(Player player, Play[] play, boolean thisPlayer);
     
-    public void discardPickup(Player player, Card card);
+    public void discardPickup(Player player, Card card, boolean thisPlayer);
     
-    public void drawPickup(Player player);
+    public void drawPickup(Player player, boolean thisPlayer);
 
+    public void playerStateChange(Player player, PlayerState oldState, PlayerState newState, boolean thisPlayer);
 
-    public void playerStateChange(PlayerState oldState, PlayerState newState);
+    public void playerOut(Player player, boolean thisPlayer);
 
-    public void playerOut(Player player);
 
     public void roundEnded(Round round);
 
     public void roundStarted(Round round);
+
+
+    public void handleException(EngineException ee);
 }

@@ -37,7 +37,7 @@ class TableSeat extends HashSet<PlayImpl>
     public int getUninitialisedPlayCount() {
         int ct = 0;
         for(PlayImpl play : this) {
-            ct += play.isInitialised() ? 1 : 0;
+            ct += !play.isInitialised() ? 1 : 0;
         }
         return ct;
     }

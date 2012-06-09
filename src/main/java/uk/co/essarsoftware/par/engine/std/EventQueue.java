@@ -5,38 +5,48 @@ import uk.co.essarsoftware.par.engine.events.GameEvent;
 import java.util.concurrent.ArrayBlockingQueue;
 
 /**
- * Created by IntelliJ IDEA.
- * User: robsteve
- * Date: 06/06/12
- * Time: 15:18
- * To change this template use File | Settings | File Templates.
+ * Queue holding <tt>GameEvent</tt>s for processing by game clients.
+ * @author Steve Roberts <steve.roberts@essarsoftware.co.uk>
+ * @version 1.0 (07-Jun-12)
  */
 class EventQueue extends ArrayBlockingQueue<GameEvent>
 {
     private static final int Q_SIZE = 20;
+    private static final long WAIT = 1000L;
 
     public EventQueue() {
         super(Q_SIZE);
     }
 
     @Override
+    public boolean add(GameEvent evt) {
+        boolean r = super.add(evt);
+        synchronized(this) {
+            notifyAll();
+        }
+        return r;
+    }
+
+    @Override
     public void clear() {
         synchronized(this) {
-            super.clear();
+            try {
+                while(size() > 0) {
+                    wait(WAIT);
+                }
+            } catch(InterruptedException ie) {
+                // Empty catch
+            }
         }
     }
-    
-    public GameEvent nextEvent() {
-        synchronized(this) {
-            try {
-                return take();
-            } catch(InterruptedException ie) {
-                return null;
-            } finally {
-                if(isEmpty()) {
-                    // Notify any waiting threads
-                    notifyAll();
-                }
+
+    @Override
+    public GameEvent take() throws InterruptedException {
+        try {
+            return super.take();
+        } finally {
+            synchronized(this) {
+                notifyAll();
             }
         }
     }

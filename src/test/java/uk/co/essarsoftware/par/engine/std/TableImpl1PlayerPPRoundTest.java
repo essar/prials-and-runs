@@ -7,49 +7,63 @@ import uk.co.essarsoftware.par.engine.Round;
 import static org.junit.Assert.*;
 
 /**
- * Created with IntelliJ IDEA.
- * User: sroberts
- * Date: 05/06/12
- * Time: 16:36
- * To change this template use File | Settings | File Templates.
+ * Test case for TableImpl class.
+ * @see TableImpl
  */
-public class TableImpl1PlayerPPRoundTest extends TableImplTest
+public class TableImpl1PlayerPPRoundTest extends TableImpl1PlayerTest
 {
+    protected Round round;
+
     public TableImpl1PlayerPPRoundTest() {
         super();
+        round = Round.PP;
     }
 
     @Override@Before
     public void setUp() {
         super.setUp();
-        underTest.createSeat(player);
         underTest.resetTable();
-        underTest.initialiseRound(Round.PP);
+        underTest.initialiseRound(round);
     }
 
     @Override@Test
-    public void testDefaultGetPlayerPlays() {
+    public void testGetPlays() {
+        assertNotNull("Plays", underTest.getPlays(player));
+        assertEquals("Play size", round.getPrials() + round.getRuns(), underTest.getPlays().length);
+    }
+
+    @Override@Test
+    public void testGetPlayerPlaysPlayer() {
         assertNotNull("Player plays", underTest.getPlays(player));
-        assertEquals("Player play size", 0, underTest.getPlays(player).length);
+        assertEquals("Player play size", round.getPrials() + round.getRuns(), underTest.getPlays(player).length);
     }
 
     @Override@Test
-    public void testCreateSeatPlayer() {
-        underTest.createSeat(player);
-        assertNotNull("Player plays not null", underTest.getPlays(player));
-        assertNull("Player seat null", underTest.getSeat(player));
-    }
-
-    @Override@Test
-    public void testInitialiseRoundPP() {
-        underTest.initialiseRound(Round.PP);
-        // TODO Change to throw exception if less than two players?
-        assertTrue("No exception", true);
+    public void testGetSeatPlayer() {
+        assertNotNull("Player seat not null", underTest.getSeat(player));
+        assertEquals("Player seat plays", (round.getPrials() + round.getRuns()), underTest.getSeat(player).getPlays().length);
+        assertEquals("Player seat uninitialised plays", (round.getPrials() + round.getRuns()), underTest.getSeat(player).getUninitialisedPlayCount());
     }
 
     @Override@Test
     public void testDeal() {
         assertEquals("One hand dealt", 1, underTest.deal().length);
-        assertNull("Empty hands dealt", underTest.deal()[0]);
+        assertNotNull("Valid hand dealt", underTest.deal()[0]);
+        assertEquals("11 cards dealt", 11, underTest.deal()[0].size());
+    }
+
+    @Override@Test
+    public void testPickupDiscard() {
+        assertNotNull("Pickup discard not null", underTest.pickupDiscard());
+    }
+
+    @Override@Test
+    public void testPickupDraw() {
+        assertNotNull("Pickup discard not null", underTest.pickupDraw());
+    }
+
+    @Override@Test
+    public void testGetDiscard() {
+        assertNotNull("Discard card", underTest.getDiscard());
     }
 }

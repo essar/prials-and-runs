@@ -18,7 +18,7 @@ class GamePlayerList extends ArrayList<PlayerImpl>
      * @param thisPlayer the current player, or player to look for the next player.
      * @return a <tt>PlayerImpl</tt> that is the next player from the one provided, or null if <tt>thisPlayer</tt> is not found or is null.
      */
-    PlayerImpl nextPlayer(PlayerImpl thisPlayer) {
+    PlayerImpl getNextPlayer(PlayerImpl thisPlayer) {
         if(thisPlayer == null) {
             return null;
         }
@@ -39,6 +39,6 @@ class GamePlayerList extends ArrayList<PlayerImpl>
     }
     
     PlayerImpl lookupPlayer(Player player) {
-        return get(indexOf(player));
+        return (indexOf(player) < 0 ? null : get(indexOf(player)));
     }
 }

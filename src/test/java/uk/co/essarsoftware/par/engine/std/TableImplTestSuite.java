@@ -11,7 +11,7 @@ import org.junit.runner.RunWith;
 import org.junit.runners.Suite;
 
 @RunWith(Suite.class)
-@Suite.SuiteClasses({TableImplTest.class, TableImpl1PlayerTest.class})
+@Suite.SuiteClasses({TableImplTest.class, TableImpl1PlayerTest.class, TableImpl1PlayerPPRoundTest.class})
 public class TableImplTestSuite
 {
     // Empty class body

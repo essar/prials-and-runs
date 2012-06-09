@@ -8,23 +8,19 @@ import org.junit.Before;
 import org.junit.Test;
 import uk.co.essarsoftware.games.cards.Card;
 import uk.co.essarsoftware.games.cards.TestPack;
-import uk.co.essarsoftware.par.engine.Player;
 import uk.co.essarsoftware.par.engine.Round;
 import uk.co.essarsoftware.par.engine.Table;
 
 import static org.junit.Assert.*;
 
 /**
- * Created with IntelliJ IDEA.
- * User: sroberts
- * Date: 05/06/12
- * Time: 16:36
- * To change this template use File | Settings | File Templates.
+ * Test case for TableImpl class.
+ * @see TableImpl
  */
 public class TableImplTest
 {
     protected Card card, unregisteredCard;
-    protected PlayerImpl player;
+    protected PlayerImpl player, player2;
     protected Round round;
 
     TableImpl underTest;
@@ -45,6 +41,7 @@ public class TableImplTest
         card = tp.findCard(card);
 
         player = new PlayerImpl("Test Player");
+        player2 = new PlayerImpl("Test Player 2");
         round = Round.PP;
     }
 
@@ -58,54 +55,59 @@ public class TableImplTest
         underTest = null;
     }
 
+    /* ** PUBLIC METHOD TESTS ** */
+
     @Test
-    public void testDefaultPickupDiscard() {
+    public void testPickupDiscard() {
         assertNull("Pickup Discard", underTest.pickupDiscard());
     }
 
     @Test
-    public void testDefaultPickupDraw() {
+    public void testPickupDraw() {
         assertNull("Pickup Draw", underTest.pickupDraw());
     }
 
     @Test
-    public void testDefaultGetPlays() {
+    public void testGetPlays() {
         assertNotNull("Plays", underTest.getPlays());
         assertEquals("Plays size", 0, underTest.getPlays().length);
     }
 
     @Test
-    public void testDefaultGetPlayerPlaysNull() {
+    public void testGetPlayerPlaysNull() {
         assertNull("Player plays", underTest.getPlays(null));
     }
 
     @Test
-    public void testDefaultGetPlayerPlays() {
+    public void testGetPlayerPlaysPlayer() {
         assertNull("Player plays", underTest.getPlays(player));
     }
 
     @Test
-    public void testDefaultGetDiscard() {
+    public void testGetDiscard() {
         assertNull("Discard", underTest.getDiscard());
     }
     
     @Test(expected = IllegalArgumentException.class)
-    public void testDefaultDiscardNull() {
+    public void testDiscardNull() {
         underTest.discard(null);
         fail("Discarded null, expected IllegalArgumentException");
     }
 
     @Test(expected = IllegalArgumentException.class)
-    public void testDefaultDiscardUnregistered() {
+    public void testDiscardUnregistered() {
         underTest.discard(unregisteredCard);
         fail("Discarded null, expected IllegalArgumentException");
     }
     
     @Test
-    public void testDefaultDiscard() {
+    public void testDiscardCard() {
         underTest.discard(card);
         assertEquals("Discarded card", card, underTest.getDiscard());
     }
+
+
+    /* ** PACKAGE METHOD TESTS ** */
 
     @Test(expected = IllegalArgumentException.class)
     public void testCreateSeatNull() {
@@ -122,7 +124,7 @@ public class TableImplTest
 
     @Test
     public void testGetSeatNull() {
-        assertNull("Player seat null", underTest.getSeat(player));
+        assertNull("Player seat null", underTest.getSeat(null));
     }
 
     @Test
@@ -141,6 +143,7 @@ public class TableImplTest
         underTest.removeSeat(player);
         assertTrue("No exception", true);
     }
+
 
     @Test(expected = IllegalArgumentException.class)
     public void testInitialiseRoundNull() {

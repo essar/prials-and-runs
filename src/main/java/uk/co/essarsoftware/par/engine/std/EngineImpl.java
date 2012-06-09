@@ -2,6 +2,7 @@ package uk.co.essarsoftware.par.engine.std;
 
 import org.apache.log4j.Logger;
 import uk.co.essarsoftware.games.cards.Card;
+import uk.co.essarsoftware.games.cards.CardArray;
 import uk.co.essarsoftware.par.engine.*;
 import uk.co.essarsoftware.par.engine.events.*;
 
@@ -16,22 +17,28 @@ import java.util.Arrays;
  */
 class EngineImpl implements Engine
 {
-    private static Logger log = Logger.getLogger(EngineImpl.class);
+    private static Logger log = Logger.getLogger(Engine.class);
     private static Logger gameLog = Logger.getLogger("uk.co.essarsoftware.par.gamelog");
 
     private final EngineClientList clients;
     private final GameImpl game;
+    private final InternalEventProcessor iep;
 
     public EngineImpl(GameImpl game) {
         this.game = game;
         clients = new EngineClientList();
+        iep = new InternalEventProcessor();
     }
 
     private void gameLog(String msg) {
         gameLog.info(String.format("[%s|Turn %d]", game.getCurrentRound(), game.getTurn()) + msg);
     }
 
-    private PlayerImpl getPlayerImpl(Player player) {
+    private PlayerImpl getPlayerImpl(Player player) throws EngineException {
+        PlayerImpl pl = game.lookupPlayer(player);
+        if(pl == null) {
+            throw new EngineException("Unknown player");
+        }
         return game.lookupPlayer(player);
     }
     
@@ -39,44 +46,56 @@ class EngineImpl implements Engine
         if(evt == null) {
             log.warn(String.format("Attempting to queue null event"));
         } else {
-            for(EngineClient cli : clients.values()) {
-                cli.addEvent(evt);
+            clients.queueEvent(evt);
+            iep.queue.add(evt);
+        }
+    }
+
+    private void setPlayerState(PlayerImpl player, PlayerState playerState) {
+        PlayerState oldPlayerState = player.getPlayerState();
+        if(oldPlayerState != playerState) {
+            synchronized(clients.get(player)) {
+                player.setPlayerState(playerState);
+                log.debug(String.format("%s changed from %s to %s", player, oldPlayerState, playerState));
+                // Notify player clients about state change
+                queueEvent(new PlayerStateChangeEvent(player, oldPlayerState, playerState));
             }
         }
     }
 
     private boolean validatePlayer(PlayerImpl player, boolean currentPlayer, PlayerState... states) throws InvalidPlayerStateException {
-        log.debug(String.format("Validating %s; currentPlayer:=%s, playerState=%s", player, game.getCurrentPlayer(), player.getPlayerState()));
-        if(currentPlayer) {
-            log.debug(String.format("Checking if %s is current player", player));
-            if(! game.isCurrentPlayer(player)) {
-                log.warn(String.format("%s is not current player", player));
-                throw new InvalidPlayerStateException("Not current player");
+        synchronized(clients.get(player)) {
+            log.debug(String.format("Validating %s; currentPlayer:=%s, playerState=%s", player, game.getCurrentPlayer(), player.getPlayerState()));
+            if(currentPlayer) {
+                if(! game.isCurrentPlayer(player)) {
+                    log.warn(String.format("%s is not current player", player));
+                    throw new InvalidPlayerStateException("Not current player");
+                }
+                log.debug(String.format("%s is current player", player));
             }
-        }
-        for(PlayerState ps : states) {
-            if(player.getPlayerState() == ps) {
-                return true;
+            for(PlayerState ps : states) {
+                if(player.getPlayerState() == ps) {
+                    return true;
+                }
             }
+            log.warn(String.format("%s is in %s but was expecting %s", player, player.getPlayerState(), Arrays.toString(states)));
+            throw new InvalidPlayerStateException("Player not in correct state", player.getPlayerState(), states);
         }
-        log.warn(String.format("%s is in %s but was expecting %s", player, player.getPlayerState(), Arrays.toString(states)));
-        throw new InvalidPlayerStateException("Player not in correct state", player.getPlayerState(), states);
     }
-    
-    
+
     void activate(Player player) throws EngineException {
-        synchronized(getPlayerImpl(player)) {
+        PlayerImpl pl = getPlayerImpl(player);
+        synchronized(clients.get(pl)) {
             log.trace(String.format("Entering activate(%s)", player));
             try {
-                PlayerImpl pl = getPlayerImpl(player);
                 // Validate pre-requisites
                 PlayerState[] expected = new PlayerState[] {PlayerState.WATCHING, PlayerState.BOUGHT};
                 if(validatePlayer(pl, true, expected)) {
                     if(pl.getPlayerState() == PlayerState.WATCHING) {
-    
+
                         // Set player state
-                        pl.setPlayerState(PlayerState.PICKUP);
-                    } else if(pl.getPlayerState() == PlayerState.BOUGHT) {
+                        setPlayerState(pl, PlayerState.PICKUP);
+                    } else if(player.getPlayerState() == PlayerState.BOUGHT) {
                         // Player bought last turn, so will be skipping a turn
                         
                         // Add penalty card to hand
@@ -84,14 +103,14 @@ class EngineImpl implements Engine
                         pl.clearPenaltyCard();
     
                         // Queue notifications
-                        queueEvent(new PickupEvent(player));
+                        queueEvent(new PickupDrawEvent(player));
                         gameLog(String.format("%s picked up a penalty card", player));
     
                         // Set player state
-                        pl.setPlayerState(PlayerState.END_TURN);
+                        setPlayerState(pl, PlayerState.END_TURN);
                     } else {
                         log.warn(String.format("%s is in %s but was expecting %s", player, player.getPlayerState(), Arrays.toString(expected)));
-                        throw new InvalidPlayerStateException("Unexpected player state", pl.getPlayerState(), expected);
+                        throw new InvalidPlayerStateException("Unexpected player state", player.getPlayerState(), expected);
                     }
                 }
             } catch(RuntimeException re) {
@@ -104,35 +123,35 @@ class EngineImpl implements Engine
         }
     }
 
-    void endRound() throws EngineException {
+    void endGame() throws EngineException {
+        // Notify clients of end of game
+        clients.endGame();
 
+        // Stop all game processes
+        abortGame();
+
+        gameLog("Game ended");
     }
     
     void endTurn(Player player) throws EngineException {
-        synchronized(getPlayerImpl(player)) {
+        PlayerImpl pl = getPlayerImpl(player);
+        synchronized(clients.get(pl)) {
             log.trace(String.format("Entering endTurn(%s)", player));
             try {
-                PlayerImpl pl = getPlayerImpl(player);
                 // Validate pre-requisites
                 if(validatePlayer(pl, true, PlayerState.END_TURN)) {
-
-                    // TODO Stuff here to make sure everyone is in sync
-
                     // Make sure the event queues for each player are empty
-                    for(EngineClient cli : clients.values()) {
-                        // TODO Re-think this, want to check each queue in parallel
-                        cli.waitAndClear(2000L);
-                    }
+                    clients.clearAll();
 
                     // Check whether player is out
 
                     log.debug(String.format("%s down:=%b, handSize=%d", pl, pl.isDown(), pl.getHandSize()));
                     if(pl.isDown() && pl.getHandSize() == 0) {
                         // Player is out
-                        pl.setPlayerState(PlayerState.END_ROUND);
+                        setPlayerState(pl, PlayerState.FINISHED);
+                    } else {
+                        setPlayerState(pl, PlayerState.WATCHING);
                     }
-
-                    pl.setPlayerState(PlayerState.WATCHING);
                 }
             } catch(RuntimeException re) {
                 log.error(String.format("%s during endTurn method: %s", re.getClass().getName(), re.getMessage()));
@@ -143,13 +162,13 @@ class EngineImpl implements Engine
             }
         }
     }
-    
+
     @Override
     public void discard(Player player, Card card) throws EngineException {
-        synchronized(getPlayerImpl(player)) {
+        PlayerImpl pl = getPlayerImpl(player);
+        synchronized(clients.get(pl)) {
             log.trace(String.format("Entering discard(%s, %s)", player, card));
             try {
-                PlayerImpl pl = getPlayerImpl(player);
                 // Validate pre-requisites
                 if(validatePlayer(pl, true, PlayerState.DISCARD, PlayerState.PLAYED)) {
                     // Remove card from hand
@@ -163,7 +182,7 @@ class EngineImpl implements Engine
                     gameLog(String.format("%s discarded %s", player, card));
 
                     // Set player state
-                    pl.setPlayerState(PlayerState.END_TURN);
+                    setPlayerState(pl, PlayerState.END_TURN);
                 }
             } catch(RuntimeException re) {
                 log.error(String.format("%s during discard method: %s", re.getClass().getName(), re.getMessage()));
@@ -177,10 +196,10 @@ class EngineImpl implements Engine
 
     @Override
     public Card pickupDiscard(Player player) throws EngineException {
-        synchronized(getPlayerImpl(player)) {
+        PlayerImpl pl = getPlayerImpl(player);
+        synchronized(clients.get(pl)) {
             log.trace(String.format("Entering pickupDiscard(%s)", player));
             try {
-                PlayerImpl pl = getPlayerImpl(player);
                 // Validate pre-requisites
                 if(validatePlayer(pl, true, PlayerState.PICKUP)) {
                     // Take card from table
@@ -190,14 +209,14 @@ class EngineImpl implements Engine
                     pl.pickup(card);
 
                     // Queue notifications
-                    queueEvent(new PickupEvent(player, card));
+                    queueEvent(new PickupDiscardEvent(player, card));
                     gameLog(String.format("%s picked up %s from discard pile", player, card));
 
                     // Set player state
                     if(pl.isDown()) {
-                        pl.setPlayerState(PlayerState.PEGGING);
+                        setPlayerState(pl, PlayerState.PEGGING);
                     } else {
-                        pl.setPlayerState(PlayerState.DISCARD);
+                        setPlayerState(pl, PlayerState.DISCARD);
                     }
 
                     return card;
@@ -216,10 +235,10 @@ class EngineImpl implements Engine
 
     @Override
     public Card pickupDraw(Player player) throws EngineException {
-        synchronized(getPlayerImpl(player)) {
+        PlayerImpl pl = getPlayerImpl(player);
+        synchronized(clients.get(pl)) {
             log.trace(String.format("Entering pickupDraw(%s)", player));
             try {
-                PlayerImpl pl = getPlayerImpl(player);
                 // Validate pre-requisites
                 if(validatePlayer(pl, true, PlayerState.PICKUP)) {
                     // Take card from table
@@ -229,14 +248,14 @@ class EngineImpl implements Engine
                     pl.pickup(card);
 
                     // Queue notifications
-                    queueEvent(new PickupEvent(player, null));
+                    queueEvent(new PickupDrawEvent(player));
                     gameLog(String.format("%s picked up from draw pile", player));
 
                     // Set player state
                     if(pl.isDown()) {
-                        pl.setPlayerState(PlayerState.PEGGING);
+                        setPlayerState(pl, PlayerState.PEGGING);
                     } else {
-                        pl.setPlayerState(PlayerState.DISCARD);
+                        setPlayerState(pl, PlayerState.DISCARD);
                     }
 
                     return card;
@@ -254,10 +273,10 @@ class EngineImpl implements Engine
 
     @Override
     public void playCards(Player player, Card[] cards) throws EngineException {
-        synchronized(getPlayerImpl(player)) {
+        PlayerImpl pl = getPlayerImpl(player);
+        synchronized(clients.get(pl)) {
             log.trace(String.format("Entering playCards(%s, %s)", player, Arrays.toString(cards)));
             try {
-                PlayerImpl pl = getPlayerImpl(player);
                 // Validate pre-requisites
                 if(validatePlayer(pl, true, PlayerState.DISCARD, PlayerState.PLAYING)) {
     
@@ -265,7 +284,7 @@ class EngineImpl implements Engine
                         // More plays needed
 
                         // Set player state
-                        pl.setPlayerState(PlayerState.PLAYING);
+                        setPlayerState(pl, PlayerState.PLAYING);
                     } else {
                         // All plays done, time to discard now
                         Play[] plays = game.getTable().getPlays(pl);
@@ -276,7 +295,7 @@ class EngineImpl implements Engine
 
                         // Set player state
                         pl.setDown(true);
-                        pl.setPlayerState(PlayerState.PLAYED);
+                        setPlayerState(pl, PlayerState.PLAYED);
                     }
                 }
             } catch(RuntimeException re) {
@@ -291,10 +310,10 @@ class EngineImpl implements Engine
 
     @Override
     public void pegCard(Player player, Play play, Card card) throws EngineException {
-        synchronized(getPlayerImpl(player)) {
+        PlayerImpl pl = getPlayerImpl(player);
+        synchronized(clients.get(pl)) {
             log.trace(String.format("Entering pegCard(%s, %s, %s)", player, play, card));
             try {
-                PlayerImpl pl = getPlayerImpl(player);
                 // Validate pre-requisites
                 if(validatePlayer(pl, true, PlayerState.PEGGING)) {
 
@@ -303,7 +322,11 @@ class EngineImpl implements Engine
                     gameLog(String.format("%s pegged %s onto %s", player, card, play));
 
                     // Set player state
-                    pl.setPlayerState(PlayerState.PEGGING);
+                    if(pl.getHandSize() == 0) {
+                        setPlayerState(pl, PlayerState.END_TURN);
+                    } else {
+                        setPlayerState(pl, PlayerState.PEGGING);
+                    }
                 }
             } catch(RuntimeException re) {
                 log.error(String.format("%s during pegCard method: %s", re.getClass().getName(), re.getMessage()));
@@ -317,17 +340,17 @@ class EngineImpl implements Engine
 
     @Override
     public void resetPlays(Player player) throws EngineException {
-        synchronized(getPlayerImpl(player)) {
+        PlayerImpl pl = getPlayerImpl(player);
+        synchronized(clients.get(pl)) {
             log.trace(String.format("Entering resetPlays(%s)", player));
             try {
-                PlayerImpl pl = getPlayerImpl(player);
                 // Validate pre-requisites
                 if(validatePlayer(pl, true, PlayerState.PLAYING)) {
 
                     gameLog(String.format("%s reset plays", player));
 
                     // Set player state
-                    pl.setPlayerState(PlayerState.DISCARD);
+                    setPlayerState(pl, PlayerState.DISCARD);
                 }
             } catch(RuntimeException re) {
                 log.error(String.format("%s during resetPlays method: %s", re.getClass().getName(), re.getMessage()));
@@ -341,24 +364,25 @@ class EngineImpl implements Engine
 
     @Override
     public boolean buy(Player player, Player buyer) throws EngineException {
-       synchronized(getPlayerImpl(player)) {
-            synchronized(getPlayerImpl(buyer)) {
+        PlayerImpl pl = getPlayerImpl(player);
+        PlayerImpl by = getPlayerImpl(buyer);
+        synchronized(clients.get(pl)) {
+            synchronized(clients.get(by)) {
                 log.trace(String.format("Entering buy(%s, %s)", player, buyer));
                 try {
-                    PlayerImpl pl = getPlayerImpl(player);
-                    PlayerImpl by = getPlayerImpl(buyer);
                     // Validate pre-requisites
                     if(validatePlayer(pl, true, PlayerState.PICKUP)) {
                         if(validatePlayer(by, false, PlayerState.WATCHING)) {
                             if(game.isBuyAllowed()) {
+                                Card card = game.getTable().getDiscard();
 
                                 // Queue notifications
-                                queueEvent(new BuyRequestEvent(player, buyer));
+                                queueEvent(new BuyRequestEvent(player, buyer, card));
                                 gameLog(String.format("%s requested to buy %s from %s", buyer, game.getTable().getDiscard(), player));
 
                                 // Set player states
-                                pl.setPlayerState(PlayerState.BUY_REQ);
-                                by.setPlayerState(PlayerState.BUYING);
+                                setPlayerState(pl, PlayerState.BUY_REQ);
+                                setPlayerState(by, PlayerState.BUYING);
 
                                 return true;
                             } else {
@@ -380,12 +404,12 @@ class EngineImpl implements Engine
 
     @Override
     public Card approveBuy(Player player, Player buyer) throws EngineException {
-        synchronized(getPlayerImpl(player)) {
-            synchronized(getPlayerImpl(buyer)) {
+        PlayerImpl pl = getPlayerImpl(player);
+        PlayerImpl by = getPlayerImpl(buyer);
+        synchronized(clients.get(pl)) {
+            synchronized(clients.get(by)) {
                 log.trace(String.format("Entering approveBuy(%s, %s)", player, buyer));
                 try {
-                    PlayerImpl pl = getPlayerImpl(player);
-                    PlayerImpl by = getPlayerImpl(buyer);
                     // Validate pre-requisites
                     if(validatePlayer(pl, true, PlayerState.BUY_REQ)) {
                         if(validatePlayer(by, false, PlayerState.BUYING)) {
@@ -410,11 +434,11 @@ class EngineImpl implements Engine
                                 gameLog(String.format("%s approved buy of %s from %s", player, bought, buyer));
 
                                 // Set player states
-                                by.setPlayerState(PlayerState.BOUGHT);
+                                setPlayerState(by, PlayerState.BOUGHT);
                                 if(pl.isDown()) {
-                                    pl.setPlayerState(PlayerState.PEGGING);
+                                    setPlayerState(pl, PlayerState.PEGGING);
                                 } else {
-                                    pl.setPlayerState(PlayerState.DISCARD);
+                                    setPlayerState(pl, PlayerState.DISCARD);
                                 }
 
                                 return card;
@@ -437,12 +461,12 @@ class EngineImpl implements Engine
 
     @Override
     public Card rejectBuy(Player player, Player buyer) throws EngineException {
-        synchronized(getPlayerImpl(player)) {
-            synchronized(getPlayerImpl(buyer)) {
+        PlayerImpl pl = getPlayerImpl(player);
+        PlayerImpl by = getPlayerImpl(buyer);
+        synchronized(clients.get(pl)) {
+            synchronized(clients.get(by)) {
                 log.trace(String.format("Entering rejectBuy(%s, %s)", player, buyer));
                 try {
-                    PlayerImpl pl = getPlayerImpl(player);
-                    PlayerImpl by = getPlayerImpl(buyer);
                     // Validate pre-requisites
                     if(validatePlayer(pl, true, PlayerState.BUY_REQ)) {
                         if(validatePlayer(by, false, PlayerState.BUYING)) {
@@ -458,11 +482,11 @@ class EngineImpl implements Engine
                                 gameLog(String.format("%s rejected buy of %s from %s", player, card, buyer));
 
                                 // Set player states
-                                by.setPlayerState(PlayerState.WATCHING);
+                                setPlayerState(by, PlayerState.WATCHING);
                                 if(pl.isDown()) {
-                                    pl.setPlayerState(PlayerState.PEGGING);
+                                    setPlayerState(pl, PlayerState.PEGGING);
                                 } else {
-                                    pl.setPlayerState(PlayerState.PLAYING);
+                                    setPlayerState(pl, PlayerState.PLAYING);
                                 }
 
                                 return card;
@@ -486,15 +510,146 @@ class EngineImpl implements Engine
     @Override
     public void abortGame() {
         //To change body of implemented methods use File | Settings | File Templates.
+
+        // Stop all client agents
+        clients.stopAllAgents();
+
+        // Stop internal processor
+        iep.stopProcessor();
     }
 
     @Override
-    public void startGame() {
-        //To change body of implemented methods use File | Settings | File Templates.
+    public EngineClient createClient(Player player, PlayerUI ui) {
+
+        if(player instanceof PlayerImpl) {
+            PlayerImpl pl = (PlayerImpl) player;
+            // Create new client
+            EngineClient cli = new EngineClient(this, game, pl, ui);
+            // Add to client list
+            clients.put(pl, cli);
+
+            return cli;
+        }
+        throw new IllegalArgumentException("Unsupported player class");
     }
 
     @Override
-    public void startRound() {
-        //To change body of implemented methods use File | Settings | File Templates.
+    public void startGame() throws EngineException {
+        // Start internal processor
+        iep.startProcessor();
+
+        // Start client agents
+        clients.startAllAgents();
+
+        // Start first round
+        startRound();
+    }
+
+    @Override
+    public void startRound() throws EngineException {
+        log.trace(String.format("Entering startRound"));
+
+        // Move to next round
+        Round round = game.nextRound();
+        if(round == Round.END) {
+            // End of game
+            endGame();
+            return;
+        }
+
+        // Set up table
+        game.getTable().resetTable();
+
+        // Deal cards
+        {
+            int handIndex = 0;
+            PlayerImpl dealer = game.getDealer();
+            PlayerImpl player = dealer;
+            CardArray[] hands = game.getTable().deal();
+
+            do {
+                player = game.getNextPlayer(player);
+                log.debug(String.format("Dealing cards for %s", player));
+                player.deal(hands[handIndex ++]);
+
+                // Set player states
+                player.setDown(false);
+                player.setPlayerState(PlayerState.WATCHING);  // Don't use local private method so don't send out events
+            } while(! player.equals(dealer) && handIndex < hands.length);
+
+            log.debug(String.format("Cards dealt to %d players", handIndex));
+        }
+
+        // Initialise table objects
+        game.getTable().initialiseRound(round);
+
+        // Move to next player
+        activate(game.nextPlayer());
+
+        log.trace(String.format("Leaving startRound"));
+    }
+
+    private class InternalEventProcessor extends Thread implements GameEventProcessor
+    {
+        private boolean running = true;
+
+        private final EventQueue queue;
+
+        InternalEventProcessor() {
+            super("Internal-Event-Processor");
+            queue = new EventQueue();
+        }
+
+        @Override
+        public void processEvent(GameEvent evt) {
+            if(evt instanceof PlayerStateChangeEvent) {
+                PlayerStateChangeEvent pscEvt = (PlayerStateChangeEvent) evt;
+
+                switch(pscEvt.getNewState()) {
+                    case END_TURN:
+                        try {
+                            // End player turn and activate next player
+                            endTurn(pscEvt.getPlayer());
+                            activate(game.nextPlayer());
+                        } catch(EngineException ee) {
+                            log.error(String.format("%s when attempting to complete end turn: %s", ee.getClass().getName(), ee.getMessage()));
+                            log.debug(ee.getMessage(), ee);
+                        }
+                        break;
+                    case FINISHED:
+                        queueEvent(new PlayerOutEvent(pscEvt.getPlayer()));
+                        break;
+                }
+            }
+        }
+
+        @Override
+        public void run() {
+            log.info(String.format("Internal processor starting"));
+            while(running) {
+                try {
+                    GameEvent evt = queue.take();
+                    processEvent(evt);
+                } catch(InterruptedException ie) {
+                    running = false;
+                    log.debug(String.format("Internal processor interrupted"));
+                } catch(RuntimeException re) {
+                    // Log exception
+                    log.error(String.format("%s while processing game event: %s", re.getClass().getName(), re.getMessage()));
+                    log.debug(re.getMessage(), re);
+                }
+            }
+            log.info(String.format("Internal processor stopping"));
+        }
+
+        public void startProcessor() {
+            running = true;
+            start();
+        }
+
+        public void stopProcessor() {
+            running = false;
+            interrupt();
+        }
     }
 }

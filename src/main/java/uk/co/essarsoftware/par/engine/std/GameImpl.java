@@ -18,20 +18,18 @@ class GameImpl implements Game
     private PlayerImpl currentPlayer, dealer;
     private Round currentRound;
 
+    private final GameImplController ctl;
     private final GamePlayerList players;
     private final TableImpl table;
 
     public GameImpl() {
+        ctl = new GameImplController();
         players = new GamePlayerList();
         currentRound = Round.START;
         log.debug(String.format("Current round set to %s", currentRound));
 
         table = new TableImpl();
         log.debug(String.format("Table created"));
-    }
-    
-    private PlayerImpl getNextPlayer(PlayerImpl pl) {
-        return players.nextPlayer(pl);
     }
     
     private Round getNextRound() {
@@ -49,27 +47,12 @@ class GameImpl implements Game
         }
     }
 
-    PlayerImpl createPlayer(String playerName) {
-        PlayerImpl player = new PlayerImpl(playerName);
-        players.add(player);
-        table.createSeat(player);
-        log.debug(String.format("Player %s created", player));
-
-        return player;
-    }
-    
     PlayerImpl lookupPlayer(Player player) {
         return players.lookupPlayer(player);
     }
     
-    void removePlayer(PlayerImpl player) {
-        if(currentRound != Round.START) {
-            log.warn(String.format("Attempting to remove player whilst game is in round %s", currentRound));
-        } else {
-            players.remove(player);
-            table.removeSeat(player);
-            log.debug(String.format("Player %s removed", player));
-        }
+    PlayerImpl getNextPlayer(PlayerImpl pl) {
+        return players.getNextPlayer(pl);
     }
 
     /**
@@ -88,8 +71,6 @@ class GameImpl implements Game
     PlayerImpl nextPlayer() {
         if(currentPlayer == null) {
             log.warn(String.format("Attempting to move to next player before game initialised"));
-        } else if(currentPlayer.getPlayerState() != PlayerState.END_TURN) {
-            log.warn(String.format("Attempting to move to next player when %s is in %s state", currentPlayer, currentPlayer.getPlayerState()));
         } else {
             // Increment turn counter once dealer has had their turn
             if(currentPlayer.equals(dealer)) {
@@ -131,13 +112,13 @@ class GameImpl implements Game
             log.debug(String.format("Current round set to %s", currentRound));
     
             // Reset turn counter
-            turn = 1;
+            turn = 0;
             log.debug(String.format("Turn set to %d", turn));
     
-            // Move to player after dealer
-            currentPlayer = getNextPlayer(dealer);
+            // Current play set to dealer
+            currentPlayer = dealer;
             log.debug(String.format("Current player set to %s", currentPlayer));
-    
+
             // Run assertions
             assert(currentRound != Round.START);
             assert(currentPlayer != null);
@@ -148,31 +129,70 @@ class GameImpl implements Game
         return currentRound;
     }
 
+    @Override
+    public GameImplController getController() {
+        return ctl;
+    }
+
+    @Override
     public PlayerImpl getCurrentPlayer() {
         return currentPlayer;
     }
 
+    @Override
     public Round getCurrentRound() {
         return currentRound;
     }
-    
+
+    @Override
     public PlayerImpl getDealer() {
         return dealer;
     }
 
+    @Override
     public int getTurn() {
         return turn;
     }
 
+    @Override
     public PlayerImpl[] getPlayers() {
         return players.getPlayers();
     }
 
+    @Override
     public TableImpl getTable() {
         return table;
     }
 
+    @Override
     public boolean isBuyAllowed() {
         return !(turn == 1 || currentRound == Round.PP);
+    }
+
+    class GameImplController implements GameController
+    {
+        @Override
+        public PlayerImpl createPlayer(String playerName) {
+            PlayerImpl player = new PlayerImpl(playerName);
+            players.add(player);
+            table.createSeat(player);
+            log.debug(String.format("Player %s created", player));
+
+            return player;
+        }
+
+        @Override
+        public void removePlayer(Player player) {
+            if(currentRound != Round.START) {
+                log.warn(String.format("Attempting to remove player whilst game is in round %s", currentRound));
+            } else {
+                PlayerImpl pl = lookupPlayer(player);
+                if(pl != null) {
+                    players.remove(pl);
+                    table.removeSeat(pl);
+                    log.debug(String.format("Player %s removed", player));
+                }
+            }
+        }
     }
 }

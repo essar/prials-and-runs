@@ -12,14 +12,20 @@ import uk.co.essarsoftware.par.engine.Player;
  */
 public class BuyRequestEvent extends AbstractGameEvent
 {
+    private Card card;
     private Player buyer;
 
-    public BuyRequestEvent(Player player, Player buyer) {
+    public BuyRequestEvent(Player player, Player buyer, Card card) {
         super(player);
         this.buyer = buyer;
+        this.card = card;
     }
-    
+
     public Player getBuyer() {
         return buyer;
+    }
+
+    public Card getCard() {
+        return card;
     }
 }
