@@ -124,13 +124,20 @@ class EngineImpl implements Engine
     }
 
     void endGame() throws EngineException {
-        // Notify clients of end of game
-        clients.endGame();
 
-        // Stop all game processes
-        abortGame();
+        if(game.getCurrentRound() != Round.END) {
+            log.warn(String.format("Cannot end game in %s state", game.getCurrentRound()));
+            throw new EngineException("Game not finished");
+        } else {
+            // Notify clients of end of game
+            clients.endGame();
 
-        gameLog("Game ended");
+            // Stop all game processes
+            abortGame();
+
+            gameLog("Game ended");
+
+        }
     }
     
     void endTurn(Player player) throws EngineException {
@@ -301,7 +308,7 @@ class EngineImpl implements Engine
             } catch(RuntimeException re) {
                 log.error(String.format("%s during playCards method: %s", re.getClass().getName(), re.getMessage()));
                 log.debug(re.getMessage(), re);
-                throw new EngineException("Unable to play cards", re);
+                throw new EngineException("Unable to play playCards", re);
             } finally {
                 log.trace(String.format("Leaving playCards(%s, %s)", player, Arrays.toString(cards)));
             }
@@ -509,8 +516,6 @@ class EngineImpl implements Engine
 
     @Override
     public void abortGame() {
-        //To change body of implemented methods use File | Settings | File Templates.
-
         // Stop all client agents
         clients.stopAllAgents();
 
@@ -535,14 +540,19 @@ class EngineImpl implements Engine
 
     @Override
     public void startGame() throws EngineException {
-        // Start internal processor
-        iep.startProcessor();
+        if(game.getCurrentRound() != Round.START) {
+            log.warn(String.format("Attempting to start game already in progress, in %s round", game.getCurrentRound()));
+            throw new EngineException("Game already in progress");
+        } else {
+            // Start internal processor
+            iep.startProcessor();
 
-        // Start client agents
-        clients.startAllAgents();
+            // Start client agents
+            clients.startAllAgents();
 
-        // Start first round
-        startRound();
+            // Start first round
+            startRound();
+        }
     }
 
     @Override
@@ -560,7 +570,7 @@ class EngineImpl implements Engine
         // Set up table
         game.getTable().resetTable();
 
-        // Deal cards
+        // Deal playCards
         {
             int handIndex = 0;
             PlayerImpl dealer = game.getDealer();
@@ -569,7 +579,7 @@ class EngineImpl implements Engine
 
             do {
                 player = game.getNextPlayer(player);
-                log.debug(String.format("Dealing cards for %s", player));
+                log.debug(String.format("Dealing playCards for %s", player));
                 player.deal(hands[handIndex ++]);
 
                 // Set player states

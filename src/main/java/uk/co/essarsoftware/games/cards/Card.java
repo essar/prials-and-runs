@@ -35,7 +35,7 @@ public class Card implements Comparable<Card>
     }
 
     /**
-     * Compares two cards for sorting.  Default sort is by suit, then value.
+     * Compares two playCards for sorting.  Default sort is by suit, then value.
      * @param c another <tt>Card</tt> to compare this object with.
      * @return an integer defining the relative position of this object to the specified object.
      */
@@ -110,7 +110,7 @@ public class Card implements Comparable<Card>
     /**
      * Checks if another card has the same suit and value as this one.
      * @param c another <tt>Card</tt> object to check.
-     * @return <tt>true</tt> if both cards have the same suit and value or either card is a joker; <tt>false</tt> otherwise, or if <tt>c</tt> is null.
+     * @return <tt>true</tt> if both playCards have the same suit and value or either card is a joker; <tt>false</tt> otherwise, or if <tt>c</tt> is null.
      */
     public boolean sameCard(Card c) {
         return c != null && ((isJoker() && !isBoundJoker())
@@ -121,7 +121,7 @@ public class Card implements Comparable<Card>
     /**
      * Checks if another card has the same suit as this one.
      * @param c another <tt>Card</tt> object to check.
-     * @return <tt>true</tt> if both cards have the same suit or either card is a joker; <tt>false</tt> otherwise, or if <tt>c</tt> is null.
+     * @return <tt>true</tt> if both playCards have the same suit or either card is a joker; <tt>false</tt> otherwise, or if <tt>c</tt> is null.
      */
     public boolean sameSuit(Card c) {
         return c != null && ((isJoker() && !isBoundJoker())
@@ -132,7 +132,7 @@ public class Card implements Comparable<Card>
     /**
      * Checks if another card has the same value as this one.
      * @param c another <tt>Card</tt> object to check.
-     * @return <tt>true</tt> if both cards have the same value or either card is a joker; <tt>false</tt> otherwise, or if <tt>c</tt> is null.
+     * @return <tt>true</tt> if both playCards have the same value or either card is a joker; <tt>false</tt> otherwise, or if <tt>c</tt> is null.
      */
     public boolean sameValue(Card c) {
         return c != null && ((isJoker() && !isBoundJoker())

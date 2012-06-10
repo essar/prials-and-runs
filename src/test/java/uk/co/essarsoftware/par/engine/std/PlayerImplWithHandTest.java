@@ -42,7 +42,7 @@ public class PlayerImplWithHandTest extends PlayerImplTest
         newCard1 = Card.createCard(Card.Suit.SPADES, Card.Value.ACE);
         newCard2 = Card.createCard(Card.Suit.DIAMONDS, Card.Value.FIVE);
 
-        // Register cards with pack
+        // Register playCards with pack
         TestPack tp = new TestPack();
         tp.add(newCard1);
         tp.add(newCard2);

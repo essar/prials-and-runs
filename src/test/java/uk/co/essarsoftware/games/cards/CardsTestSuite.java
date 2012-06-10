@@ -4,7 +4,7 @@ import org.junit.runner.RunWith;
 import org.junit.runners.Suite;
 
 /**
- * Test suite for cards package.
+ * Test suite for playCards package.
  * @author Steve Roberts <steve.roberts@essarsoftware.co.uk>
  * @version 1.0 (07-Jun-12)
  * @see CardTest

@@ -3,8 +3,10 @@ package uk.co.essarsoftware.par.engine.std;
 import org.apache.log4j.Logger;
 import uk.co.essarsoftware.games.cards.Card;
 import uk.co.essarsoftware.games.cards.CardArray;
-import uk.co.essarsoftware.games.cards.SortableCardArray;
-import uk.co.essarsoftware.par.engine.*;
+import uk.co.essarsoftware.par.engine.CardNotFoundException;
+import uk.co.essarsoftware.par.engine.DuplicateCardException;
+import uk.co.essarsoftware.par.engine.Player;
+import uk.co.essarsoftware.par.engine.PlayerState;
 
 /**
  * Created with IntelliJ IDEA.
@@ -22,7 +24,7 @@ class PlayerImpl implements Player
     private PlayerState playerState;
     private String playerName;
 
-    private final SortableCardArray hand;
+    private final CardArray hand;
 
     static {
         log.debug("** DEBUG ENABLED, card information may appear in log output **");
@@ -30,7 +32,7 @@ class PlayerImpl implements Player
 
     public PlayerImpl(String playerName) {
         this.playerName = playerName;
-        this.hand = new SortableCardArray();
+        this.hand = new CardArray();
         this.playerState = PlayerState.INIT;
         this.down = false;
         

@@ -2,7 +2,6 @@ package uk.co.essarsoftware.par.engine.std;
 
 import uk.co.essarsoftware.games.cards.Card;
 import uk.co.essarsoftware.games.cards.CardArray;
-import uk.co.essarsoftware.games.cards.SortableCardArray;
 import uk.co.essarsoftware.par.engine.CardNotFoundException;
 import uk.co.essarsoftware.par.engine.DuplicateCardException;
 
@@ -15,7 +14,7 @@ import uk.co.essarsoftware.par.engine.DuplicateCardException;
  */
 class Hand
 {
-    private SortableCardArray cards;
+    private CardArray cards;
 
     boolean contains(Card card) {
         return cards.contains(card);
@@ -50,23 +49,7 @@ class Hand
         return cards.getCards();
     }
 
-    public void moveCardDown(Card card) {
-        cards.moveCardDown(card);
-    }
-
-    public void moveCardUp(Card card) {
-        cards.moveCardUp(card);
-    }
-
     public int size() {
         return cards.size();
-    }
-
-    public void sortBySuit() {
-        cards.sortBySuit();
-    }
-
-    public void sortByValue() {
-        cards.sortByValue();
     }
 }

@@ -37,7 +37,7 @@ public interface Engine
 
 
     /**
-     * Play a set of cards onto the table.
+     * Play a set of playCards onto the table.
      * @param player the <tt>Player</tt> calling this action.  Must be current player and in <tt>DISCARD</tt> or <tt>PLAYING</tt> state.
      * @param cards an array of <tt>Card</tt>s that form the play.  Must either be a valid prial or run.
      * @throws EngineException if a pre-condition fails or an error occurs within the engine.

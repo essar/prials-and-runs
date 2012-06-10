@@ -90,7 +90,7 @@ class TableImpl implements Table
         CardArray[] hands = new CardArray[seats.size()];
         int cardsRequired = hands.length * handSize;
         if(drawPile.size() < cardsRequired) {
-            log.warn(String.format("Unable to deal cards, %d cards in pile, %d needed", drawPile.size(), cardsRequired));
+            log.warn(String.format("Unable to deal playCards, %d playCards in pile, %d needed", drawPile.size(), cardsRequired));
         } else {
             for(int i = 0; i < handSize; i ++) {
                 for(int ii = 0; ii < hands.length; ii ++) {
@@ -111,13 +111,13 @@ class TableImpl implements Table
 
         // Repopulate the draw pile
         int minDeckSize = (int) ((double) seats.size() * (double) handSize * overDealFactor);
-        log.debug(String.format("%d cards are required as a minimum.", minDeckSize));
+        log.debug(String.format("%d playCards are required as a minimum.", minDeckSize));
 
         while(drawPile.size() <= minDeckSize) {
             drawPile.add(Pack.generatePackWithJokers());
-            log.debug(String.format("Draw pile now %d cards, minimum of %d needed.", drawPile.size(), minDeckSize));
+            log.debug(String.format("Draw pile now %d playCards, minimum of %d needed.", drawPile.size(), minDeckSize));
         }
-        log.debug(String.format("Draw pile rebuilt with %d cards.", drawPile.size()));
+        log.debug(String.format("Draw pile rebuilt with %d playCards.", drawPile.size()));
 
         // Shuffle the deck
         drawPile.shuffle();
@@ -153,7 +153,7 @@ class TableImpl implements Table
         Card card = drawPile.pickup();
         log.debug(String.format("Card %s taken from draw pile, %d card(s) remain on draw pile.", card, drawPile.size()));
 
-        // If there are no cards left, move cards from the discard pile back to draw pile
+        // If there are no playCards left, move playCards from the discard pile back to draw pile
         if(drawPile.size() == 0) {
             Card discard = discardPile.pickup();
             discardPile.resetTo(drawPile);

@@ -49,7 +49,7 @@ public class TableImpl1PlayerPPRoundTest extends TableImpl1PlayerTest
     public void testDeal() {
         assertEquals("One hand dealt", 1, underTest.deal().length);
         assertNotNull("Valid hand dealt", underTest.deal()[0]);
-        assertEquals("11 cards dealt", 11, underTest.deal()[0].size());
+        assertEquals("11 playCards dealt", 11, underTest.deal()[0].size());
     }
 
     @Override@Test

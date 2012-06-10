@@ -9,10 +9,6 @@ package uk.co.essarsoftware.par.engine;
  */
 public abstract class GameFactory
 {
-    protected GameFactory() {
-
-    }
-
     public abstract Engine createEngine(Game game);
 
     public abstract Game createGame();

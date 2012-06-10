@@ -160,7 +160,7 @@ public class TableImplTest
 
     @Test
     public void testDeal() {
-        assertEquals("No cards dealt", 0, underTest.deal().length);
+        assertEquals("No playCards dealt", 0, underTest.deal().length);
     }
 
     @Test

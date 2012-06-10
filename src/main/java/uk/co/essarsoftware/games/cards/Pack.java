@@ -3,7 +3,7 @@ package uk.co.essarsoftware.games.cards;
 import java.util.UUID;
 
 /**
- * Class representing a pack of 52 or 54 playing cards.
+ * Class representing a pack of 52 or 54 playing playCards.
  */
 public class Pack extends CardStack
 {
@@ -19,15 +19,15 @@ public class Pack extends CardStack
 
     /**
      * Create a new pack with the specified identifier.
-     * @param packID a unique number identifying cards from this pack.
+     * @param packID a unique number identifying playCards from this pack.
      */
     protected Pack(long packID) {
         this.packID = packID;
     }
 
     /**
-     * Create a new pack of 52 cards.
-     * @return a <tt>Pack</tt> object containing all 52 playing cards.
+     * Create a new pack of 52 playCards.
+     * @return a <tt>Pack</tt> object containing all 52 playing playCards.
      */
     public static Pack generatePack() {
         Pack p = new Pack();
@@ -43,8 +43,8 @@ public class Pack extends CardStack
     }
 
     /**
-     * Create a new pack of 54 cards, including jokers.
-     * @return a <tt>Pack</tt> object containing all 52 playing cards plus 2 jokers.
+     * Create a new pack of 54 playCards, including jokers.
+     * @return a <tt>Pack</tt> object containing all 52 playing playCards plus 2 jokers.
      */
     public static Pack generatePackWithJokers() {
         Pack p = generatePack();

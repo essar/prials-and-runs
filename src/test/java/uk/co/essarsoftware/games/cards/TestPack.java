@@ -7,7 +7,7 @@ public class TestPack extends Pack
 {
     static long packID = 13579L;
     /**
-     * Create a new pack from a list of cards.
+     * Create a new pack from a list of playCards.
      * @param cards a list of <tt>Card</tt>s to hold in the pack.
      */
     public TestPack(Card... cards) {

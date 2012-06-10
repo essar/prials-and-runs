@@ -1,6 +1,7 @@
 package uk.co.essarsoftware.games.cards;
 
 import java.util.ArrayList;
+import java.util.Arrays;
 import java.util.Collection;
 
 /**
@@ -13,7 +14,12 @@ import java.util.Collection;
 public class CardArray extends ArrayList<Card>
 {
     public CardArray() {
+        super();
+    }
 
+    public CardArray(Card[] cards) {
+        super();
+        addAll(cards);
     }
 
     Card findCard(Card card) {
@@ -25,7 +31,7 @@ public class CardArray extends ArrayList<Card>
                 }
             }
         } else {
-            // Look for cards with same suit and value
+            // Look for playCards with same suit and value
             for(Card c : this) {
                 if(c.sameCard(card)) {
                     return c;
@@ -70,6 +76,10 @@ public class CardArray extends ArrayList<Card>
             }
         }
         return super.addAll(index, cards);
+    }
+
+    public boolean addAll(Card[] cards) {
+        return addAll(Arrays.asList(cards));
     }
 
     @Override
