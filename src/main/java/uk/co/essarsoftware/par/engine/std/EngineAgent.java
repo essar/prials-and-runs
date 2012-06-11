@@ -9,6 +9,8 @@ package uk.co.essarsoftware.par.engine.std;
  */
 interface EngineAgent extends Runnable
 {
+    public boolean isRunning();
+
     public void startAgent();
 
     public void stopAgent();

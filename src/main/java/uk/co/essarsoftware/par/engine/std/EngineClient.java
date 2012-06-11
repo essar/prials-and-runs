@@ -50,6 +50,10 @@ class EngineClient implements GameClient
     EngineAgent getAgent() {
         return agt;
     }
+    
+    GameEvent[] getQueue() {
+        return queue.toArray(new GameEvent[queue.size()]);
+    }
 
     /**
      * Add a <tt>GameEvent</tt> to the client's queue.
@@ -465,6 +469,11 @@ class EngineClient implements GameClient
                 }
             }
             log.info(String.format("[%s] agent stopping", player));
+        }
+
+        @Override
+        public boolean isRunning() {
+            return running;
         }
 
         @Override

@@ -6,34 +6,105 @@ import uk.co.essarsoftware.games.cards.CardArray;
 import uk.co.essarsoftware.par.engine.*;
 import uk.co.essarsoftware.par.engine.events.*;
 
+import java.text.DateFormat;
+import java.text.SimpleDateFormat;
 import java.util.Arrays;
+import java.util.Date;
 
 /**
- * Created with IntelliJ IDEA.
- * User: sroberts
- * Date: 05/06/12
- * Time: 18:56
- * To change this template use File | Settings | File Templates.
+ * Engine implementation.
+ * @author Steve Roberts <steve.roberts@essarsoftware.co.uk>
+ * @version 1.0 (07-Jun-12)
  */
 class EngineImpl implements Engine
 {
+    // Game and engine logs
     private static Logger log = Logger.getLogger(Engine.class);
     private static Logger gameLog = Logger.getLogger("uk.co.essarsoftware.par.gamelog");
 
+    // Internal engine elements
     private final EngineClientList clients;
     private final GameImpl game;
     private final InternalEventProcessor iep;
 
+    /**
+     * Create a new Engine for the specified game.
+     * @param game a <tt>GameImpl</tt> instance that this Engine will be running. An IllegalArgumentException will be thrown if this is <tt>null</tt>.
+     */
     public EngineImpl(GameImpl game) {
+        // Validate arguments
+        if(game == null) {
+            throw new IllegalArgumentException("Cannot create engine on null game");
+        }
         this.game = game;
         clients = new EngineClientList();
         iep = new InternalEventProcessor();
     }
+    
+    private void dumpToLog() {
+        if(! log.isDebugEnabled()) {
+            log.info(String.format("Engine dump requested"));
+        } else {
+            long start = System.currentTimeMillis();
+            
+            log.debug(String.format("====== ENGINE DUMP ======"));
+            log.debug(String.format("%s", DateFormat.getDateTimeInstance().format(new Date(start))));
+            log.debug(String.format("-------------------------"));
+            log.debug(String.format("  GAME"));
+            log.debug(String.format("-------------------------"));
+            log.debug(String.format("Current round:  %s", game.getCurrentRound()));
+            log.debug(String.format("Current turn:   %d", game.getTurn()));
+            log.debug(String.format("Current player: %s", game.getCurrentPlayer()));
+            log.debug(String.format("Next player:    %s", game.getNextPlayer(game.getCurrentPlayer())));
+            log.debug(String.format("Dealer:         %s", game.getDealer()));
 
-    private void gameLog(String msg) {
-        gameLog.info(String.format("[%s|Turn %d]", game.getCurrentRound(), game.getTurn()) + msg);
+            log.debug(String.format("-------------------------"));
+            log.debug(String.format("  TABLE"));
+            log.debug(String.format("-------------------------"));
+            log.debug(String.format("Discard: %s", game.getTable().getDiscard()));
+            for(PlayerImpl pl : game.getPlayers()) {
+                log.debug(String.format("[%s]", pl));
+                log.debug(String.format("  Seat:    %s", game.getTable().getSeat(pl)));
+            }
+
+            log.debug(String.format("-------------------------"));
+            log.debug(String.format("  PLAYERS"));
+            log.debug(String.format("-------------------------"));
+            for(PlayerImpl pl : clients.keySet()) {
+                log.debug(String.format("Player name:  %s", pl.getPlayerName()));
+                log.debug(String.format("Player state: %s", pl.getPlayerState()));
+                log.debug(String.format("Is down:      %s", pl.isDown()));
+                log.debug(String.format("Hand:         (%d) %s", pl.getHandSize(), Arrays.toString(pl.getHand())));
+                log.debug(String.format("Penalty card: %s", pl.getPenaltyCard()));
+
+                EngineClient ec = clients.get(pl);
+                log.debug(String.format("[Client]"));
+                log.debug(String.format("  Running: %b", ec.getAgent().isRunning()));
+                for(GameEvent evt : ec.getQueue()) {
+                    log.debug(String.format("         : %s", evt));
+                }
+                log.debug(String.format("-------------------------"));
+            }
+            
+            log.debug(String.format("Log dump completed in %.3f seconds", ((double) (System.currentTimeMillis() - start) / 1000.0)));
+            log.debug(String.format("==== END ENGINE DUMP ===="));
+        }
     }
 
+    /**
+     * Write a message to the game log, for audit and recording purposes.
+     * @param msg the message to record.
+     */
+    private void gameLog(String msg) {
+        gameLog.info(String.format("[%s|Turn %d] %s", game.getCurrentRound(), game.getTurn(), msg));
+    }
+
+    /**
+     * Retrieve a <tt>PlayerImpl</tt> that relates to the given Player object.  Ensures that only known players are used.
+     * @param player a reference to the player required.
+     * @return the specified player, as a <tt>PlayerImpl</tt> instance.
+     * @throws EngineException if the player specified is not part of this game.
+     */
     private PlayerImpl getPlayerImpl(Player player) throws EngineException {
         PlayerImpl pl = game.lookupPlayer(player);
         if(pl == null) {
@@ -41,7 +112,11 @@ class EngineImpl implements Engine
         }
         return game.lookupPlayer(player);
     }
-    
+
+    /**
+     * Add a <tt>GameEvent</tt> to all of the player event queues.
+     * @param evt the <tt>GameEvent</tt> to queue.
+     */
     private void queueEvent(GameEvent evt) {
         if(evt == null) {
             log.warn(String.format("Attempting to queue null event"));
@@ -51,6 +126,11 @@ class EngineImpl implements Engine
         }
     }
 
+    /**
+     * Update a player's state and notify all clients of the change.
+     * @param player the player whose state to change.
+     * @param playerState the new state.
+     */
     private void setPlayerState(PlayerImpl player, PlayerState playerState) {
         PlayerState oldPlayerState = player.getPlayerState();
         if(oldPlayerState != playerState) {
@@ -63,6 +143,14 @@ class EngineImpl implements Engine
         }
     }
 
+    /**
+     * Validate the specified player against given criteria.
+     * @param player the player to validate.
+     * @param currentPlayer check whether player is the current player?
+     * @param states check whether the player is in one of the specified states.
+     * @return <tt>true</tt> if the player meets all criteria.
+     * @throws InvalidPlayerStateException if the player does not meet all specified criteria.
+     */
     private boolean validatePlayer(PlayerImpl player, boolean currentPlayer, PlayerState... states) throws InvalidPlayerStateException {
         synchronized(clients.get(player)) {
             log.debug(String.format("Validating %s; currentPlayer:=%s, playerState=%s", player, game.getCurrentPlayer(), player.getPlayerState()));
@@ -83,6 +171,12 @@ class EngineImpl implements Engine
         }
     }
 
+    /**
+     * Activates a player for the start of their turn. Moves a player into the PICKUP state unless they bought, in which
+     * case their penalty card is added to their hand and turn ended.
+     * @param player the player to activate.
+     * @throws EngineException if a problem occurs during the activation process.
+     */
     void activate(Player player) throws EngineException {
         PlayerImpl pl = getPlayerImpl(player);
         synchronized(clients.get(pl)) {
@@ -123,6 +217,10 @@ class EngineImpl implements Engine
         }
     }
 
+    /**
+     * Process the end of game event, notifying all clients and stopping engine processes.
+     * @throws EngineException if a problem occurs during the end game process.
+     */
     void endGame() throws EngineException {
 
         if(game.getCurrentRound() != Round.END) {
@@ -136,10 +234,14 @@ class EngineImpl implements Engine
             abortGame();
 
             gameLog("Game ended");
-
         }
     }
-    
+
+    /**
+     * End a players turn. Ensures that all players have processed all queued events
+     * @param player the player whose turn to end.
+     * @throws EngineException if a problem occurs during the end turn process.
+     */
     void endTurn(Player player) throws EngineException {
         PlayerImpl pl = getPlayerImpl(player);
         synchronized(clients.get(pl)) {
@@ -647,6 +749,8 @@ class EngineImpl implements Engine
                     // Log exception
                     log.error(String.format("%s while processing game event: %s", re.getClass().getName(), re.getMessage()));
                     log.debug(re.getMessage(), re);
+
+                    dumpToLog();
                 }
             }
             log.info(String.format("Internal processor stopping"));
