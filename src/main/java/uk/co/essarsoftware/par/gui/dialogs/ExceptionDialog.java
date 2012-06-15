@@ -49,6 +49,7 @@ public class ExceptionDialog extends JDialog
         lblMessage = new JLabel(String.format("An unexpected error has occurred: %s", e == null ? "Unexpected exception" : e.getMessage()));
         lblMessage.setIcon(icon);
         lblMessage.setPreferredSize(new Dimension(360, 40));
+        lblMessage.setBorder(BorderFactory.createLineBorder(Color.red));
 
         // txtTrace - ExceptionTracePane
         txtTrace = new ExceptionTracePane();
@@ -79,7 +80,7 @@ public class ExceptionDialog extends JDialog
         con.gridx = 0; con.gridy = 0;
         con.gridwidth = 1; con.gridheight = 1;
         con.anchor = GridBagConstraints.NORTH;
-        con.fill = GridBagConstraints.BOTH;
+        con.fill = GridBagConstraints.HORIZONTAL;
         con.insets = new Insets(5, 5, 5, 5);
         con.weightx = 0; con.weighty = 0;
 
