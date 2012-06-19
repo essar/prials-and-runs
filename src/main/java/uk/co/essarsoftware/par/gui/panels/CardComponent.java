@@ -72,7 +72,7 @@ public class CardComponent extends JToggleButton
         Graphics2D g2D = (Graphics2D) g;
 
         // Shift card drawing up by offset
-        if(! isSelected()) {
+        if(isSelectable() && ! isSelected()) {
             // Move card drawing down
             g2D.translate(0, selectOffset);
         }

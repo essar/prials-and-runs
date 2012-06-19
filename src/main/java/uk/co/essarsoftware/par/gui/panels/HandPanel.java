@@ -36,7 +36,7 @@ public class HandPanel extends JPanel
             @Override
             protected CardComponent createComponent() {
                 CardComponent cc = new CardComponent(true, true);
-                cc.addMouseListener(new HandCardComponentMouseAdapter());
+                cc.addActionListener(new HandCardComponentActionListener());
                 return cc;
             }
         };
@@ -120,10 +120,10 @@ public class HandPanel extends JPanel
         lblCardCount.setText(cards.getCardCount() + "");
     }
 
-    private class HandCardComponentMouseAdapter extends MouseAdapter
+    private class HandCardComponentActionListener implements ActionListener
     {
         @Override
-        public void mouseClicked(MouseEvent e) {
+        public void actionPerformed(ActionEvent e) {
             if(e.getSource() instanceof CardComponent) {
                 CardComponent cc = (CardComponent) e.getSource();
                 cc.setSelected(! cc.isSelected());
