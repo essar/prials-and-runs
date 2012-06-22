@@ -1,11 +1,15 @@
 package uk.co.essarsoftware.par.gui.panels;
 
 import uk.co.essarsoftware.games.cards.Card;
+import uk.co.essarsoftware.par.gui.components.CardComponent;
+import uk.co.essarsoftware.par.gui.components.SelectableCardsPanel;
 
 import javax.swing.*;
 import javax.swing.border.BevelBorder;
 import java.awt.*;
 import java.awt.event.*;
+import java.beans.PropertyChangeEvent;
+import java.beans.PropertyChangeListener;
 import java.lang.reflect.InvocationTargetException;
 
 /**
@@ -32,15 +36,10 @@ public class HandPanel extends JPanel
     
     private void initComponents() {
         // Set up cards panel
-        cards = new SelectableCardsPanel() {
-            @Override
-            protected CardComponent createComponent() {
-                CardComponent cc = new CardComponent(true, true);
-                cc.addActionListener(new HandCardComponentActionListener());
-                return cc;
-            }
-        };
-        cards.addMouseWheelListener(new HandPanelMouseAdapter());
+        cards = new SelectableCardsPanel();
+        cards.addMouseWheelListener(new HandPanelMouseWheelListener());
+        cards.addPropertyChangeListener(new SelectedCardsPropertyListener());
+        //cards.addSelectedCardsPropertyChangeListener(new SelectedCardsPropertyListener());
 
         // Set up penalty card
         penaltyCard = new CardComponent(false, false);
@@ -97,7 +96,7 @@ public class HandPanel extends JPanel
     public int getSelectedCardCount() {
         return cards.getSelectedCardCount();
     }
-    
+
     public Card[] getSelectedCards() {
         return cards.getSelectedCards();
     }
@@ -113,51 +112,19 @@ public class HandPanel extends JPanel
         cards.setCards(cardsIn);
 
         // Update buttons
-        btnMoveCardsDown.getAction().setEnabled(getSelectedCardCount() > 0);
-        btnMoveCardsUp.getAction().setEnabled(getSelectedCardCount() > 0);
+        //btnMoveCardsDown.getAction().setEnabled(getSelectedCardCount() > 0);
+        //btnMoveCardsUp.getAction().setEnabled(getSelectedCardCount() > 0);
 
         // Update status component
-        lblCardCount.setText(cards.getCardCount() + "");
+        //lblCardCount.setText(cards.getCardCount() + "");
     }
 
-    private class HandCardComponentActionListener implements ActionListener
-    {
-        @Override
-        public void actionPerformed(ActionEvent e) {
-            if(e.getSource() instanceof CardComponent) {
-                CardComponent cc = (CardComponent) e.getSource();
-                cc.setSelected(! cc.isSelected());
 
-                // Update buttons
-                btnMoveCardsDown.getAction().setEnabled(getSelectedCardCount() > 0);
-                btnMoveCardsUp.getAction().setEnabled(getSelectedCardCount() > 0);
+    /* **********************
+     * ADAPTER / LISTENER CLASSES
+     */
 
-                // Update status component
-                lblSelectedCount.setText(getSelectedCardCount() + "");
-            }
-        }
-    }
-
-    private class PenaltyCardMouseAdapter extends MouseAdapter
-    {
-        @Override
-         public void mousePressed(MouseEvent e) {
-            if(e.getSource() instanceof CardComponent) {
-                CardComponent cc = (CardComponent) e.getSource();
-                cc.setFaceUp(true);
-            }
-        }
-
-        @Override
-        public void mouseReleased(MouseEvent e) {
-            if(e.getSource() instanceof CardComponent) {
-                CardComponent cc = (CardComponent) e.getSource();
-                cc.setFaceUp(false);
-            }
-        }
-    }
-    
-    private class HandPanelMouseAdapter implements MouseWheelListener
+    private class HandPanelMouseWheelListener implements MouseWheelListener
     {
         @Override
         public void mouseWheelMoved(MouseWheelEvent e) {
@@ -169,6 +136,44 @@ public class HandPanel extends JPanel
             }
         }
     }
+
+    private class PenaltyCardMouseAdapter extends MouseAdapter
+    {
+        @Override
+        public void mousePressed(MouseEvent e) {
+            if(e.getSource() instanceof CardComponent) {
+                // Set penalty card face up
+                CardComponent cc = (CardComponent) e.getSource();
+                cc.setFaceUp(true);
+            }
+        }
+
+        @Override
+        public void mouseReleased(MouseEvent e) {
+            if(e.getSource() instanceof CardComponent) {
+                // Set penalty card face down
+                CardComponent cc = (CardComponent) e.getSource();
+                cc.setFaceUp(false);
+            }
+        }
+    }
+
+    private class SelectedCardsPropertyListener implements PropertyChangeListener
+    {
+        @Override
+        public void propertyChange(PropertyChangeEvent evt) {
+            // Update buttons
+            btnMoveCardsDown.getAction().setEnabled(getSelectedCardCount() > 0);
+            btnMoveCardsUp.getAction().setEnabled(getSelectedCardCount() > 0);
+
+            // Update status component
+            lblSelectedCount.setText(getSelectedCardCount() + "");
+        }
+    }
+    
+    /* **********************
+     * ACTION CLASSES
+     */
 
     private class MoveCardsDownAction extends AbstractAction
     {
