@@ -1,10 +1,16 @@
 package uk.co.essarsoftware.par.gui.panels;
 
+import uk.co.essarsoftware.games.cards.Card;
+import uk.co.essarsoftware.par.client.DirectClient;
 import uk.co.essarsoftware.par.client.GameClient;
+import uk.co.essarsoftware.par.engine.*;
+import uk.co.essarsoftware.par.engine.std.StdGameFactory;
 
 import javax.swing.*;
+import javax.swing.border.BevelBorder;
 import java.awt.*;
 import java.awt.event.ActionEvent;
+import java.awt.event.KeyEvent;
 import java.lang.reflect.InvocationTargetException;
 
 /**
@@ -16,70 +22,97 @@ import java.lang.reflect.InvocationTargetException;
  */
 public class CommandPanel extends JPanel
 {
-    private GameClient client;
+    private final GameClient client;
+    private HandPanel pnlHand;
     
     // Swing components
     private JButton btnAcceptBuy, btnBuy, btnDiscard, btnPickupDiscard, btnPickupDraw, btnPegCard, btnPlayCards, btnRejectBuy, btnResetPlays;
+    private JLabel lblPlayerName, lblPlayerState;
 
-    public CommandPanel(GameClient client) {
+    public CommandPanel(GameClient client, HandPanel pnlHand) {
         this.client = client;
-        setLayout(new GridBagLayout());
+        this.pnlHand = pnlHand;
+        setLayout(new BorderLayout());
         
         initComponents();
         drawComponents();
     }
 
     private void initComponents() {
+        Dimension btnSize = new Dimension(150, 75);
+
         btnAcceptBuy = new JButton(new AcceptBuyAction());
+        btnAcceptBuy.setPreferredSize(btnSize);
 
         btnBuy = new JButton(new BuyAction());
+        btnBuy.setPreferredSize(btnSize);
+
         btnDiscard = new JButton(new DiscardAction());
+        btnDiscard.setPreferredSize(btnSize);
+
         btnPickupDiscard = new JButton(new PickupDiscardAction());
+        btnPickupDiscard.setPreferredSize(btnSize);
+
         btnPickupDraw = new JButton(new PickupDrawAction());
+        btnPickupDraw.setPreferredSize(btnSize);
+
         btnPegCard = new JButton(new PegCardAction());
+        btnPegCard.setPreferredSize(btnSize);
+
         btnPlayCards = new JButton(new PlayCardsAction());
+        btnPlayCards.setPreferredSize(btnSize);
+
         btnRejectBuy = new JButton(new RejectBuyAction());
+        btnRejectBuy.setPreferredSize(btnSize);
+
         btnResetPlays = new JButton(new ResetPlaysAction());
+        btnResetPlays.setPreferredSize(btnSize);
+
+
+        lblPlayerName = new JLabel(client.getPlayerName());
+        lblPlayerName.setBorder(BorderFactory.createCompoundBorder(BorderFactory.createBevelBorder(BevelBorder.LOWERED), BorderFactory.createEmptyBorder(2, 10, 2, 10)));
+        lblPlayerName.setPreferredSize(new Dimension(150, 20));
+
+        lblPlayerState = new JLabel(client.getPlayerState().name());
+        lblPlayerState.setBorder(BorderFactory.createCompoundBorder(BorderFactory.createBevelBorder(BevelBorder.LOWERED), BorderFactory.createEmptyBorder(2, 10, 2, 10)));
+        lblPlayerState.setPreferredSize(new Dimension(80, 20));
     }
 
     private void drawComponents() {
-        GridBagConstraints con = new GridBagConstraints();
-        con.gridx = 0; con.gridy = 0;
-        con.gridwidth = 1; con.gridheight = 1;
-        con.fill = GridBagConstraints.BOTH;
-        con.anchor = GridBagConstraints.CENTER;
-        con.insets = new Insets(2, 2, 2, 2);
-        
-        con.gridx = 0; con.gridy = 0;
-        add(btnPickupDraw, con);
-        
-        con.gridx = 1; con.gridy = 0;
-        add(btnPickupDiscard, con);
 
-        con.gridx = 0; con.gridy = 1;
-        con.gridwidth = 2;
-        add(btnDiscard, con);
-        
-        con.gridx = 0; con.gridy = 2;
-        add(btnBuy, con);
-        
-        con.gridx = 0; con.gridy = 3;
-        con.gridwidth = 1;
-        add(btnAcceptBuy, con);
+        Box status = Box.createHorizontalBox();
+        status.add(lblPlayerName);
+        status.add(lblPlayerState);
+        status.add(Box.createHorizontalGlue());
+        add(status, BorderLayout.SOUTH);
 
-        con.gridx = 1; con.gridy = 3;
-        add(btnRejectBuy, con);
-        
-        con.gridx = 0; con.gridy = 4;
-        con.gridwidth = 1;
-        add(btnPlayCards, con);
+        Container btns = new Container();
+        btns.setLayout(new GridLayout(6, 2, 2, 2));
 
-        con.gridx = 1; con.gridy = 4;
-        add(btnPegCard, con);
+        btns.add(btnPickupDraw);
+        btns.add(btnPickupDiscard);
+        btns.add(btnDiscard);
+        btns.add(btnBuy);
+        btns.add(btnAcceptBuy);
+        btns.add(btnRejectBuy);
+        btns.add(btnPlayCards);
+        btns.add(btnPegCard);
+        btns.add(btnResetPlays);
 
-        con.gridx = 0; con.gridy = 5;
-        con.gridwidth = 2;
-        add(btnResetPlays, con);
+        add(btns, BorderLayout.CENTER);
+    }
+
+    public void refreshCards() {
+        for(Component c : getComponents()) {
+            if(c instanceof AbstractButton) {
+                AbstractButton btn = (AbstractButton) c;
+                btn.setEnabled(btn.getAction().isEnabled());
+            }
+        }
+    }
+
+    public void setHandPanel(HandPanel pnlHand) {
+        this.pnlHand = pnlHand;
     }
     
     
@@ -87,11 +120,20 @@ public class CommandPanel extends JPanel
     {
         AcceptBuyAction() {
             putValue(Action.NAME, "Accept Buy");
+            putValue(Action.MNEMONIC_KEY, KeyEvent.VK_A);
+            putValue(Action.SHORT_DESCRIPTION, "Accept current buy request");
         }
 
         @Override
         public void actionPerformed(ActionEvent e) {
-            //To change body of implemented methods use File | Settings | File Templates.
+            Player buyer = null;
+            Card card = client.approveBuy(buyer);
+        }
+
+        @Override
+        public boolean isEnabled() {
+            return client.isBuyAllowed()
+                    && client.getPlayerState() == PlayerState.BUY_REQ;
         }
     }
 
@@ -99,11 +141,20 @@ public class CommandPanel extends JPanel
     {
         BuyAction() {
             putValue(Action.NAME, "Buy");
+            putValue(Action.MNEMONIC_KEY, KeyEvent.VK_B);
+            putValue(Action.SHORT_DESCRIPTION, "Buy the top discarded card");
         }
 
         @Override
         public void actionPerformed(ActionEvent e) {
-            //To change body of implemented methods use File | Settings | File Templates.
+            Card card = client.getTable().getDiscard();
+            client.buy(client.getCurrentPlayer(), card);
+        }
+
+        @Override
+        public boolean isEnabled() {
+            return client.isBuyAllowed()
+                    && client.getPlayerState() == PlayerState.WATCHING;
         }
     }
 
@@ -111,11 +162,22 @@ public class CommandPanel extends JPanel
     {
         DiscardAction() {
             putValue(Action.NAME, "Discard");
+            putValue(Action.MNEMONIC_KEY, KeyEvent.VK_D);
+            putValue(Action.SHORT_DESCRIPTION, "Discard the current selected card");
         }
 
         @Override
         public void actionPerformed(ActionEvent e) {
-            //To change body of implemented methods use File | Settings | File Templates.
+            Card card = pnlHand.getSelectedCards()[0];
+            client.discard(card);
+        }
+
+        @Override
+        public boolean isEnabled() {
+            return pnlHand.getSelectedCardCount() == 1
+                    && (client.getPlayerState() == PlayerState.DISCARD
+                        || client.getPlayerState() == PlayerState.PEGGING
+                        || client.getPlayerState() == PlayerState.PLAYED);
         }
     }
 
@@ -123,11 +185,18 @@ public class CommandPanel extends JPanel
     {
         PickupDiscardAction() {
             putValue(Action.NAME, "Pickup Discard");
+            putValue(Action.MNEMONIC_KEY, KeyEvent.VK_I);
+            putValue(Action.SHORT_DESCRIPTION, "Pickup the top discarded card");
         }
 
         @Override
         public void actionPerformed(ActionEvent e) {
-            //To change body of implemented methods use File | Settings | File Templates.
+            Card card = client.pickupDiscard();
+        }
+
+        @Override
+        public boolean isEnabled() {
+            return client.getPlayerState() == PlayerState.PICKUP;
         }
     }
 
@@ -135,11 +204,18 @@ public class CommandPanel extends JPanel
     {
         PickupDrawAction() {
             putValue(Action.NAME, "Pickup Draw");
+            putValue(Action.MNEMONIC_KEY, KeyEvent.VK_R);
+            putValue(Action.SHORT_DESCRIPTION, "Pickup the top draw card");
         }
 
         @Override
         public void actionPerformed(ActionEvent e) {
-            //To change body of implemented methods use File | Settings | File Templates.
+            Card card = client.pickupDraw();
+        }
+
+        @Override
+        public boolean isEnabled() {
+            return client.getPlayerState() == PlayerState.PICKUP;
         }
     }
 
@@ -147,11 +223,21 @@ public class CommandPanel extends JPanel
     {
         PegCardAction() {
             putValue(Action.NAME, "Peg Card");
+            putValue(Action.MNEMONIC_KEY, KeyEvent.VK_E);
+            putValue(Action.SHORT_DESCRIPTION, "Peg the current selected card");
         }
 
         @Override
         public void actionPerformed(ActionEvent e) {
-            //To change body of implemented methods use File | Settings | File Templates.
+            Play play = null;
+            Card card = client.getTable().getDiscard();
+            client.pegCard(play, card);
+        }
+
+        @Override
+        public boolean isEnabled() {
+            return client.isDown()
+                    && client.getPlayerState() == PlayerState.PEGGING;
         }
     }
 
@@ -159,11 +245,21 @@ public class CommandPanel extends JPanel
     {
         PlayCardsAction() {
             putValue(Action.NAME, "Play Cards");
+            putValue(Action.MNEMONIC_KEY, KeyEvent.VK_L);
+            putValue(Action.SHORT_DESCRIPTION, "Play the current selected cards");
         }
 
         @Override
         public void actionPerformed(ActionEvent e) {
-            //To change body of implemented methods use File | Settings | File Templates.
+            Card[] cards = pnlHand.getSelectedCards();
+            client.playCards(cards);
+        }
+
+        @Override
+        public boolean isEnabled() {
+            return pnlHand.getSelectedCardCount() == 1
+                    && (client.getPlayerState() == PlayerState.DISCARD
+                        || client.getPlayerState() == PlayerState.PLAYING);
         }
     }
 
@@ -171,11 +267,21 @@ public class CommandPanel extends JPanel
     {
         RejectBuyAction() {
             putValue(Action.NAME, "Reject Buy");
+            putValue(Action.MNEMONIC_KEY, KeyEvent.VK_R);
+            putValue(Action.SHORT_DESCRIPTION, "Reject current buy request");
         }
 
         @Override
         public void actionPerformed(ActionEvent e) {
-            //To change body of implemented methods use File | Settings | File Templates.
+            Player buyer = null;
+            Card card = client.rejectBuy(buyer);
+        }
+
+        @Override
+        public boolean isEnabled() {
+            return pnlHand.getSelectedCardCount() == 3
+                    && (client.getPlayerState() == PlayerState.DISCARD
+                        || client.getPlayerState() == PlayerState.PLAYING);
         }
     }
 
@@ -183,17 +289,30 @@ public class CommandPanel extends JPanel
     {
         ResetPlaysAction() {
             putValue(Action.NAME, "Reset");
+            putValue(Action.MNEMONIC_KEY, KeyEvent.VK_S);
+            putValue(Action.SHORT_DESCRIPTION, "Reset current plays");
         }
 
         @Override
         public void actionPerformed(ActionEvent e) {
-            //To change body of implemented methods use File | Settings | File Templates.
+            client.resetPlays();
+        }
+
+        @Override
+        public boolean isEnabled() {
+            return client.getPlayerState() == PlayerState.PLAYING;
         }
     }
     
     public static void main(String[] args) {
+        GameFactory gf = GameFactory.getInstance(StdGameFactory.class);
 
-        final CommandPanel cp = new CommandPanel(null);
+        Game game = gf.createGame();
+        Engine engine = gf.createEngine(game);
+
+        DemoClient cli1 = new DemoClient(engine, game.getController(), "Player 1");
+
+        final CommandPanel cp = new CommandPanel(cli1, new HandPanel());
 
         final JFrame fr = new JFrame("CommandPanelTest");
 
@@ -214,6 +333,81 @@ public class CommandPanel extends JPanel
             System.err.println(ite);
         } catch(InterruptedException ie) {
             System.err.println(ie);
+        }
+    }
+
+    static class DemoClient extends DirectClient implements PlayerUI
+    {
+        private GameClient client;
+
+        DemoClient(Engine engine, GameController ctl, String playerName) {
+            super(engine, ctl, playerName);
+            setUI(this);
+        }
+
+        @Override
+        public void buyApproved(Player player, Player buyer, Card card, boolean thisPlayer) {
+            //To change body of implemented methods use File | Settings | File Templates.
+        }
+
+        @Override
+        public void buyRejected(Player player, Player buyer, Card card, boolean thisPlayer) {
+            //To change body of implemented methods use File | Settings | File Templates.
+        }
+
+        @Override
+        public void buyRequest(Player player, Player buyer, Card card, boolean thisPlayer) {
+            //To change body of implemented methods use File | Settings | File Templates.
+        }
+
+        @Override
+        public void cardDiscarded(Player player, Card card, boolean thisPlayer) {
+            //To change body of implemented methods use File | Settings | File Templates.
+        }
+
+        @Override
+        public void cardPegged(Player player, Play play, Card card, boolean thisPlayer) {
+            //To change body of implemented methods use File | Settings | File Templates.
+        }
+
+        @Override
+        public void cardsPlayed(Player player, Play[] play, boolean thisPlayer) {
+            //To change body of implemented methods use File | Settings | File Templates.
+        }
+
+        @Override
+        public void discardPickup(Player player, Card card, boolean thisPlayer) {
+            //To change body of implemented methods use File | Settings | File Templates.
+        }
+
+        @Override
+        public void drawPickup(Player player, boolean thisPlayer) {
+            //To change body of implemented methods use File | Settings | File Templates.
+        }
+
+        @Override
+        public void playerStateChange(Player player, PlayerState oldState, PlayerState newState, boolean thisPlayer) {
+            //To change body of implemented methods use File | Settings | File Templates.
+        }
+
+        @Override
+        public void playerOut(Player player, boolean thisPlayer) {
+            //To change body of implemented methods use File | Settings | File Templates.
+        }
+
+        @Override
+        public void roundEnded(Round round) {
+            //To change body of implemented methods use File | Settings | File Templates.
+        }
+
+        @Override
+        public void roundStarted(Round round) {
+            //To change body of implemented methods use File | Settings | File Templates.
+        }
+
+        @Override
+        public void handleException(EngineException ee) {
+            //To change body of implemented methods use File | Settings | File Templates.
         }
     }
 }

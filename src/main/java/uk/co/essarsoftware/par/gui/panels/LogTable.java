@@ -1,6 +1,7 @@
 package uk.co.essarsoftware.par.gui.panels;
 
 import org.apache.log4j.AppenderSkeleton;
+import org.apache.log4j.Level;
 import org.apache.log4j.Logger;
 import org.apache.log4j.spi.LoggingEvent;
 
@@ -21,10 +22,14 @@ import java.util.Date;
  */
 class LogTable extends JTable
 {
-    private LogTableModel model;
+    private int ctF, ctE, ctW, ctI, ctD;
+
+    private LogPanel.LogTableTabPanel parent;
+    private final LogTableModel model;
     
-    public LogTable(Logger log) {
+    public LogTable(LogPanel.LogTableTabPanel parent, Logger log) {
         super();
+        this.parent = parent;
 
         // Set up data model
         model = new LogTableModel();
@@ -61,6 +66,16 @@ class LogTable extends JTable
             le.message = String.format("[%s] %s", loggingEvent.getThreadName(), loggingEvent.getRenderedMessage());
 
             model.addEntry(le);
+
+            // Update counts
+            switch(loggingEvent.getLevel().toInt()) {
+                case Level.FATAL_INT: ctF ++; break;
+                case Level.ERROR_INT: ctE ++; break;
+                case Level.WARN_INT: ctW ++; break;
+                case Level.INFO_INT: ctI ++; break;
+                case Level.DEBUG_INT: ctD ++; break;
+            }
+            parent.setCounts(ctF, ctE, ctW, ctI, ctD);
         }
 
         @Override
