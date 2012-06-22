@@ -1,5 +1,8 @@
 package uk.co.essarsoftware.par.gui.panels;
 
+import uk.co.essarsoftware.games.cards.Card;
+import uk.co.essarsoftware.par.gui.components.CardComponent;
+
 import javax.swing.*;
 import java.awt.*;
 import java.awt.event.ActionEvent;
@@ -54,18 +57,21 @@ public class TablePanel extends JPanel
             add(pp, con);
         }
     }
+
+    public void setDiscard(Card card) {
+        discardPile.setCard(card);
+    }
     
     public static void main(String[] args) {
-        final JFrame fr = new JFrame("TablePanel Test");
-        final TablePanel tp = new TablePanel();
-        
         try {
             SwingUtilities.invokeAndWait(new Runnable() {
                 @Override
                 public void run() {
+                    JFrame fr = new JFrame("TablePanel Test");
                     fr.setDefaultCloseOperation(JFrame.EXIT_ON_CLOSE);
                     fr.setLayout(new BorderLayout());
 
+                    TablePanel tp = new TablePanel();
                     fr.add(tp, BorderLayout.CENTER);
 
                     fr.pack();
