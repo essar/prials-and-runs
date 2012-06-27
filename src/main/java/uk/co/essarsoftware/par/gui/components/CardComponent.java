@@ -24,7 +24,7 @@ public class CardComponent extends JToggleButton
 
     // Component properties
     private boolean selectable;
-    private final CardComponentBean bean;
+    private final SelectableCardProperty scp;
 
     // Drawing parameters
     private float cardWidth = 50f;
@@ -41,15 +41,16 @@ public class CardComponent extends JToggleButton
      * @param selectable <tt>true</tt> to specify the card can be selected, <tt>false</tt> to specify it cannot be selected.
      */
     public CardComponent(boolean faceUp, boolean selectable) {
-        bean = new CardComponentBean(this);
-        bean.setFaceUp(faceUp);
+        scp = new SelectableCardProperty();
+        scp.setFaceUp(faceUp);
         this.selectable = selectable;
 
         // Create listener on bean to repaint object when properties change
-        bean.addPropertyChangeListener(new PropertyChangeListener() {
+        scp.addPropertyChangeListener(new PropertyChangeListener() {
             @Override
             public void propertyChange(PropertyChangeEvent evt) {
                 repaint();
+                firePropertyChange(evt.getPropertyName(), evt.getOldValue(), evt.getNewValue());
             }
         });
 
@@ -57,15 +58,11 @@ public class CardComponent extends JToggleButton
         addActionListener(new ActionListener() {
             @Override
             public void actionPerformed(ActionEvent e) {
-                if(isSelectable()) {
-                    setSelected(! isSelected());
+                if (isSelectable()) {
+                    setSelected(!isSelected());
                 }
             }
         });
-    }
-
-    CardComponentBean getCardComponentBean() {
-        return bean;
     }
 
     /**
@@ -73,7 +70,7 @@ public class CardComponent extends JToggleButton
      * @return the <tt>Card</tt> object currently being displayed.
      */
     public Card getCard() {
-        return bean.getCard();
+        return scp.getCard();
     }
 
     /**
@@ -100,7 +97,7 @@ public class CardComponent extends JToggleButton
     }
 
     public boolean isFaceUp() {
-        return bean.isFaceUp();
+        return scp.isFaceUp();
     }
 
     @Override
@@ -114,7 +111,7 @@ public class CardComponent extends JToggleButton
 
     @Override
     public boolean isSelected() {
-        return bean.isSelected();
+        return scp.isSelected();
     }
 
     @Override
@@ -127,7 +124,7 @@ public class CardComponent extends JToggleButton
             g2D.translate(0, selectOffset);
         }
 
-        Card card = bean.getCard();
+        Card card = scp.getCard();
         
         // Create objects
         float cornerRoundedness = 10;
@@ -170,7 +167,7 @@ public class CardComponent extends JToggleButton
      * @param card a Card to display.
      */
     public void setCard(Card card) {
-        bean.setCard(card);
+        scp.setCard(card);
     }
 
     /**
@@ -178,7 +175,7 @@ public class CardComponent extends JToggleButton
      * @param faceUp <tt>true</tt> to specify face up, <tt>false</tt> to specify face down.
      */
     public void setFaceUp(boolean faceUp) {
-        bean.setFaceUp(faceUp);
+        scp.setFaceUp(faceUp);
     }
 
     /**
@@ -188,7 +185,7 @@ public class CardComponent extends JToggleButton
     @Override
     public void setSelected(boolean selected) {
         if(selectable) {
-            bean.setSelected(selected);
+            scp.setSelected(selected);
         }
     }
 }
