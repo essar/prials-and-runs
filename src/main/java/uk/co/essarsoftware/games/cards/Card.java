@@ -52,7 +52,12 @@ public class Card implements Comparable<Card>
         if(isJoker() && !isBoundJoker()) {
             return -1;
         }
-        if(getSuit() == c.getSuit()) {
+        // Same card - sort using pack ID
+        if(sameCard(c)) {
+            return (int) (c.packID - packID);
+        }
+        // Same suit, sort by value, otherwise sort by value
+        if(sameSuit(c)) {
             return (c.getValue() == null ? 1 : getValue().compareTo(c.getValue()));
         } else {
             return (c.getSuit() == null ? 1 : getSuit().compareTo(c.getSuit()));
@@ -190,7 +195,7 @@ public class Card implements Comparable<Card>
                 case JACK: return "J";
                 case QUEEN: return "Q";
                 case KING: return "K";
-                default: return "" + ordinal();
+                default: return "" + (ordinal() + 1);
             }
         }
     }
