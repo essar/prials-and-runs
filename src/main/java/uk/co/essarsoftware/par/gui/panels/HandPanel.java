@@ -2,7 +2,7 @@ package uk.co.essarsoftware.par.gui.panels;
 
 import uk.co.essarsoftware.games.cards.Card;
 import uk.co.essarsoftware.par.gui.components.CardComponent;
-import uk.co.essarsoftware.par.gui.components.SelectableCardsPanel;
+import uk.co.essarsoftware.par.gui.beans.CardBean;
 
 import javax.swing.*;
 import javax.swing.border.BevelBorder;
@@ -13,11 +13,10 @@ import java.beans.PropertyChangeListener;
 import java.lang.reflect.InvocationTargetException;
 
 /**
- * Created by IntelliJ IDEA.
- * User: robsteve
- * Date: 18/06/12
- * Time: 09:05
- * To change this template use File | Settings | File Templates.
+ * <p>Swing panel responsible for displaying a player's hand of cards.</p>
+ * <p>Cards can be selected, sorted and moved into a custom order.</p>
+ * @author Steve Roberts <steve.roberts@essarsoftware.co.uk>
+ * @version 1.0
  */
 public class HandPanel extends JPanel
 {
@@ -38,8 +37,7 @@ public class HandPanel extends JPanel
         // Set up cards panel
         cards = new SelectableCardsPanel();
         cards.addMouseWheelListener(new HandPanelMouseWheelListener());
-        cards.addPropertyChangeListener(new SelectedCardsPropertyListener());
-        //cards.addSelectedCardsPropertyChangeListener(new SelectedCardsPropertyListener());
+        cards.addPropertyChangeListener("selected", new SelectedCardsPropertyListener());
 
         // Set up penalty card
         penaltyCard = new CardComponent(false, false);
@@ -93,6 +91,28 @@ public class HandPanel extends JPanel
         add(ctr, BorderLayout.CENTER);
     }
 
+    private void moveSelectedDown() {
+        for(int i = 0; i < cards.getSelectedCardCount(); i ++) {
+            CardBean cb = cards.getSelectedCardBeans().get(i);
+            cards.moveDown(cb);
+        }
+    }
+    
+    private void moveSelectedUp() {
+        for(int i = cards.getSelectedCardCount(); i > 0; i --) {
+            CardBean cb = cards.getSelectedCardBeans().get(i - 1);
+            cards.moveUp(cb);
+        }
+    }
+
+    private void sortBySuit() {
+        cards.sortBySuit();
+    }
+
+    private void sortByValue() {
+        cards.sortByValue();
+    }
+
     public int getSelectedCardCount() {
         return cards.getSelectedCardCount();
     }
@@ -112,11 +132,11 @@ public class HandPanel extends JPanel
         cards.setCards(cardsIn);
 
         // Update buttons
-        //btnMoveCardsDown.getAction().setEnabled(getSelectedCardCount() > 0);
-        //btnMoveCardsUp.getAction().setEnabled(getSelectedCardCount() > 0);
+        btnMoveCardsDown.getAction().setEnabled(getSelectedCardCount() > 0);
+        btnMoveCardsUp.getAction().setEnabled(getSelectedCardCount() > 0);
 
         // Update status component
-        //lblCardCount.setText(cards.getCardCount() + "");
+        lblCardCount.setText(cards.getCardCount() + "");
     }
 
 
@@ -129,10 +149,10 @@ public class HandPanel extends JPanel
         @Override
         public void mouseWheelMoved(MouseWheelEvent e) {
             if(e.getWheelRotation() > 0) {
-                cards.moveSelectedDown();
+                moveSelectedDown();
             }
             if(e.getWheelRotation() < 0) {
-                cards.moveSelectedUp();
+                moveSelectedUp();
             }
         }
     }
@@ -184,7 +204,7 @@ public class HandPanel extends JPanel
 
         @Override
         public void actionPerformed(ActionEvent e) {
-            cards.moveSelectedDown();
+            moveSelectedDown();
         }
     }
 
@@ -197,7 +217,7 @@ public class HandPanel extends JPanel
 
         @Override
         public void actionPerformed(ActionEvent e) {
-            cards.moveSelectedUp();
+            moveSelectedUp();
         }
     }
 
@@ -210,7 +230,7 @@ public class HandPanel extends JPanel
 
         @Override
         public void actionPerformed(ActionEvent e) {
-            cards.sortBySuit();
+            sortBySuit();
         }
     }
 
@@ -223,7 +243,7 @@ public class HandPanel extends JPanel
 
         @Override
         public void actionPerformed(ActionEvent e) {
-            cards.sortByValue();
+            sortByValue();
         }
     }
     

@@ -1,9 +1,6 @@
 package uk.co.essarsoftware.par.gui.panels;
 
-import uk.co.essarsoftware.par.client.GameClient;
 import uk.co.essarsoftware.par.engine.Play;
-import uk.co.essarsoftware.par.gui.components.CardComponent;
-import uk.co.essarsoftware.par.gui.components.CardsPanel;
 
 import javax.swing.*;
 import java.awt.*;
