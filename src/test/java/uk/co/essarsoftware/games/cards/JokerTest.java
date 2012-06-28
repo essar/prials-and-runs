@@ -13,6 +13,7 @@ public class JokerTest extends CardTest
 {
     public JokerTest() {
         super();
+        same = Card.createJoker();
     }
 
     @Override@Before
@@ -40,14 +41,19 @@ public class JokerTest extends CardTest
         assertTrue("Compare to before", underTest.compareTo(before) < 0);
     }
 
-    @Override
+    @Override@Test
     public void testCompareToSame() {
-        // No test
+        assertTrue("Compare to same", underTest.compareTo(same) < 0);
+    }
+
+    @Override@Test
+    public void testCompareToSelf() {
+        assertEquals("Compare to self", 0, underTest.compareTo(underTest));
     }
 
     @Override@Test
     public void testCompareToJoker() {
-        assertEquals("Compare to joker", 0, underTest.compareTo(joker));
+        assertTrue("Compare to joker", underTest.compareTo(joker) < 0);
     }
 
     @Override@Test
@@ -55,38 +61,48 @@ public class JokerTest extends CardTest
         assertTrue("Compare to bound joker", underTest.compareTo(boundJoker) < 0);
     }
 
-    @Override
-    public void testEqualsSame() {
-        // No test
-    }
-
     @Override@Test
-    public void testSameCardDifferent() {
-        assertTrue("Same as after", underTest.sameCard(after));
-    }
-
-    @Override
     public void testSameCardSame() {
-        // No test
+        assertFalse("Same as same", underTest.sameCard(same));
     }
 
     @Override@Test
-    public void testSameSuitDifferent() {
-        assertTrue("Same suit as after", underTest.sameSuit(after));
+    public void testSameCardSelf() {
+        assertFalse("Same as self", underTest.sameCard(underTest));
     }
 
-    @Override
+    @Override@Test
+    public void testSameBoundJoker() {
+        assertFalse("Same as bound joker", underTest.sameCard(boundJoker));
+    }
+
+    @Override@Test
     public void testSameSuitSame() {
-        // No test
+        assertFalse("Same suit as same", underTest.sameSuit(same));
     }
 
     @Override@Test
-    public void testSameValueDifferent() {
-        assertTrue("Same value as before", underTest.sameValue(before));
+    public void testSameSuitSelf() {
+        assertFalse("Same suit as self", underTest.sameSuit(underTest));
     }
 
-    @Override
+    @Override@Test
+    public void testSameSuitBoundJoker() {
+        assertFalse("Same suit as bound joker", underTest.sameSuit(boundJoker));
+    }
+
+    @Override@Test
     public void testSameValueSame() {
-        // No test
+        assertFalse("Same value as same", underTest.sameValue(same));
+    }
+
+    @Override@Test
+    public void testSameValueSelf() {
+        assertFalse("Same value as self", underTest.sameValue(underTest));
+    }
+
+    @Override@Test
+    public void testSameValueBoundJoker() {
+        assertFalse("Same value as bound joker", underTest.sameValue(boundJoker));
     }
 }

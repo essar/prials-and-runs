@@ -12,7 +12,7 @@ import org.junit.runners.Suite;
  * @see BoundedJokerTest
  */
 @RunWith(Suite.class)
-@Suite.SuiteClasses({CardTest.class, JokerTest.class, BoundedJokerTest.class})
+@Suite.SuiteClasses({CardTest.class, NonPackCardTest.class, JokerTest.class, NonPackJokerTest.class, BoundedJokerTest.class})
 public class CardsTestSuite
 {
     // Empty class body

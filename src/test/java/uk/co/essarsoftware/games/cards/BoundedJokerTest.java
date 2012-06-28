@@ -31,4 +31,9 @@ public class BoundedJokerTest extends CardTest
     public void testIsJoker() {
         assertTrue("Is Joker", underTest.isJoker());
     }
+
+    @Override@Test
+    public void testCompareToSame() {
+        assertTrue("Compare to same", underTest.compareTo(same) < 0);
+    }
 }

@@ -80,7 +80,7 @@ public class CardTest
 
     @Test
     public void testCompareToSame() {
-        assertEquals("Compare to same", 0, underTest.compareTo(same));
+        assertTrue("Compare to same", underTest.compareTo(same) > 0);
     }
 
     @Test
@@ -95,7 +95,7 @@ public class CardTest
 
     @Test
     public void testCompareToBoundJoker() {
-        assertEquals("Compare to bound joker", 0, underTest.compareTo(boundJoker));
+        assertTrue("Compare to bound joker", underTest.compareTo(boundJoker) > 0);
     }
 
     @Test
@@ -150,7 +150,7 @@ public class CardTest
 
     @Test
     public void testSameCardJoker() {
-        assertTrue("Same as joker", underTest.sameCard(joker));
+        assertFalse("Same as joker", underTest.sameCard(joker));
     }
 
     @Test
@@ -180,7 +180,7 @@ public class CardTest
 
     @Test
     public void testSameSuitJoker() {
-        assertTrue("Same suit as joker", underTest.sameSuit(joker));
+        assertFalse("Same suit as joker", underTest.sameSuit(joker));
     }
 
     @Test
@@ -210,7 +210,7 @@ public class CardTest
 
     @Test
     public void testSameValueJoker() {
-        assertTrue("Same value as joker", underTest.sameValue(joker));
+        assertFalse("Same value as joker", underTest.sameValue(joker));
     }
 
     @Test

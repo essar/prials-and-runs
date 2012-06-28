@@ -44,19 +44,23 @@ public class Card implements Comparable<Card>
         if(c == null) {
             return 1;
         }
-        // Two unbounded jokers equal each other
-        if(isJoker() && !isBoundJoker() && c.isJoker() && !c.isBoundJoker()) {
+        // If identical object then zero
+        if(equals(c)) {
             return 0;
         }
         // Unbounded joker so always first
-        if(isJoker() && !isBoundJoker()) {
+        if(isJoker() && ! isBoundJoker()) {
             return -1;
         }
-        // Same card - sort using pack ID
-        if(sameCard(c)) {
-            return (int) (c.packID - packID);
+        // Unbounded jokers are always first
+        if(c.isJoker() && ! c.isBoundJoker()) {
+            return 1;
         }
-        // Same suit, sort by value, otherwise sort by value
+        // Same card - put a joker first then sort using pack ID
+        if(sameCard(c)) {
+            return (c.isJoker() ? 1 : (packID == 0 ? -1 : c.packID == 0 ? 1 : (int) (c.packID - packID)));
+        }
+        // Same suit so sort by value, otherwise sort by suit
         if(sameSuit(c)) {
             return (c.getValue() == null ? 1 : getValue().compareTo(c.getValue()));
         } else {
@@ -72,6 +76,7 @@ public class Card implements Comparable<Card>
      */
     @Override
     public boolean equals(Object o) {
+        System.out.println(String.format("Comparing %s to %s", this, o));
         // Cannot be equal to null
         if(o == null) {
             return false;
@@ -80,6 +85,7 @@ public class Card implements Comparable<Card>
         if(! (o instanceof Card)) {
             return false;
         }
+        // Must be card with same pack ID (but not zero) and same card (same suit/value)
         Card c = (Card) o;
         return ((packID | c.packID) != 0 && c.packID == packID && sameCard(c));
     }
@@ -115,34 +121,37 @@ public class Card implements Comparable<Card>
     /**
      * Checks if another card has the same suit and value as this one.
      * @param c another <tt>Card</tt> object to check.
-     * @return <tt>true</tt> if both playCards have the same suit and value or either card is a joker; <tt>false</tt> otherwise, or if <tt>c</tt> is null.
+     * @return <tt>true</tt> if both cards have the same suit and value; <tt>false</tt> otherwise, or if this card is an unbound joker, or if <tt>c</tt> is null.
      */
     public boolean sameCard(Card c) {
-        return c != null && ((isJoker() && !isBoundJoker())
+        /*return c != null && ((isJoker() && !isBoundJoker())
                             || (c.isJoker() && !c.isBoundJoker())
-                            || (sameSuit(c) && sameValue(c)));
+                            || (sameSuit(c) && sameValue(c)));*/
+        return c != null && !(isJoker() && !isBoundJoker()) && sameSuit(c) && sameValue(c);
     }
 
     /**
      * Checks if another card has the same suit as this one.
      * @param c another <tt>Card</tt> object to check.
-     * @return <tt>true</tt> if both playCards have the same suit or either card is a joker; <tt>false</tt> otherwise, or if <tt>c</tt> is null.
+     * @return <tt>true</tt> if both cards have the same suit; <tt>false</tt> otherwise, or if or this card is an unbound joker, or if <tt>c</tt> is null.
      */
     public boolean sameSuit(Card c) {
-        return c != null && ((isJoker() && !isBoundJoker())
+        /*return c != null && ((isJoker() && !isBoundJoker())
                             || (c.isJoker() && !c.isBoundJoker())
-                            || getSuit().equals(c.getSuit()));
+                            || getSuit().equals(c.getSuit()));*/
+        return c != null && !(isJoker() && !isBoundJoker()) && getSuit().equals(c.getSuit());
     }
 
     /**
      * Checks if another card has the same value as this one.
      * @param c another <tt>Card</tt> object to check.
-     * @return <tt>true</tt> if both playCards have the same value or either card is a joker; <tt>false</tt> otherwise, or if <tt>c</tt> is null.
+     * @return <tt>true</tt> if both cards have the same value; <tt>false</tt> otherwise, or if or this card is an unbound joker, or if <tt>c</tt> is null.
      */
     public boolean sameValue(Card c) {
-        return c != null && ((isJoker() && !isBoundJoker())
+        /*return c != null && ((isJoker() && !isBoundJoker())
                             || (c.isJoker() && !c.isBoundJoker())
-                            || getValue().equals(c.getValue()));
+                            || getValue().equals(c.getValue()));*/
+        return c != null && !(isJoker() && !isBoundJoker()) && getValue().equals(c.getValue());
     }
     
     @Override
@@ -228,7 +237,27 @@ public class Card implements Comparable<Card>
          * @param boundCard the <tt>Card</tt> to bind this Joker to.
          */
         public void bindTo(Card boundCard) {
+            if(boundCard.isJoker()) {
+                throw new IllegalArgumentException("Cannot bind joker to joker");
+            }
             this.boundCard = boundCard;
+        }
+
+        @Override
+        public int compareTo(Card c) {
+            if(c == null) {
+                return 1;
+            }
+            // If identical object then zero
+            if(equals(c)) {
+                return 0;
+            }
+            // Otherwise unbounded jokers are always first
+            if(isJoker() && ! isBoundJoker()) {
+                return -1;
+            }
+            // Compare to bound card
+            return boundCard.compareTo(c);
         }
 
         @Override
@@ -241,8 +270,9 @@ public class Card implements Comparable<Card>
             if(! (o instanceof Joker)) {
                 return false;
             }
+            // Must be a joker with same pack ID (but not zero) and same serial
             Joker j = (Joker) o;
-            return (super.equals(j) && serial == j.serial);
+            return ((packID | j.packID) != 0 && j.packID == packID && (serial == j.serial));
         }
 
         @Override
