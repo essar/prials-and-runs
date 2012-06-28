@@ -56,9 +56,9 @@ public class Card implements Comparable<Card>
         if(c.isJoker() && ! c.isBoundJoker()) {
             return 1;
         }
-        // Same card - put a joker first then sort using pack ID
+        // Same card - put a bound joker first then sort using pack ID
         if(sameCard(c)) {
-            return (c.isJoker() ? 1 : (packID == 0 ? -1 : c.packID == 0 ? 1 : (int) (c.packID - packID)));
+            return (c.isBoundJoker() ? 1 : (packID == 0 ? -1 : c.packID == 0 ? 1 : (int) (c.packID - packID)));
         }
         // Same suit so sort by value, otherwise sort by suit
         if(sameSuit(c)) {
@@ -76,7 +76,6 @@ public class Card implements Comparable<Card>
      */
     @Override
     public boolean equals(Object o) {
-        System.out.println(String.format("Comparing %s to %s", this, o));
         // Cannot be equal to null
         if(o == null) {
             return false;
@@ -124,9 +123,6 @@ public class Card implements Comparable<Card>
      * @return <tt>true</tt> if both cards have the same suit and value; <tt>false</tt> otherwise, or if this card is an unbound joker, or if <tt>c</tt> is null.
      */
     public boolean sameCard(Card c) {
-        /*return c != null && ((isJoker() && !isBoundJoker())
-                            || (c.isJoker() && !c.isBoundJoker())
-                            || (sameSuit(c) && sameValue(c)));*/
         return c != null && !(isJoker() && !isBoundJoker()) && sameSuit(c) && sameValue(c);
     }
 
@@ -136,9 +132,6 @@ public class Card implements Comparable<Card>
      * @return <tt>true</tt> if both cards have the same suit; <tt>false</tt> otherwise, or if or this card is an unbound joker, or if <tt>c</tt> is null.
      */
     public boolean sameSuit(Card c) {
-        /*return c != null && ((isJoker() && !isBoundJoker())
-                            || (c.isJoker() && !c.isBoundJoker())
-                            || getSuit().equals(c.getSuit()));*/
         return c != null && !(isJoker() && !isBoundJoker()) && getSuit().equals(c.getSuit());
     }
 
@@ -148,9 +141,6 @@ public class Card implements Comparable<Card>
      * @return <tt>true</tt> if both cards have the same value; <tt>false</tt> otherwise, or if or this card is an unbound joker, or if <tt>c</tt> is null.
      */
     public boolean sameValue(Card c) {
-        /*return c != null && ((isJoker() && !isBoundJoker())
-                            || (c.isJoker() && !c.isBoundJoker())
-                            || getValue().equals(c.getValue()));*/
         return c != null && !(isJoker() && !isBoundJoker()) && getValue().equals(c.getValue());
     }
     
