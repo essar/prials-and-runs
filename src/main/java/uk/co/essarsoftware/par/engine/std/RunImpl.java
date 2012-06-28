@@ -95,4 +95,9 @@ class RunImpl extends PlayImpl implements Run
         }
         return allowableCards.toArray(new Card[allowableCards.size()]);
     }
+
+    @Override
+    public boolean isRun() {
+        return true;
+    }
 }

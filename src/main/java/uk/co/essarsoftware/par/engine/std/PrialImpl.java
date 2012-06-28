@@ -64,4 +64,9 @@ class PrialImpl extends PlayImpl implements Prial
         }
         return allowableCards.toArray(new Card[allowableCards.size()]);
     }
+
+    @Override
+    public boolean isPrial() {
+        return true;
+    }
 }
