@@ -37,7 +37,7 @@ public class EngineImplTest
         underTest = (EngineImpl) gf.createEngine(game);
         client1 = new DirectClient(underTest, game.getController(), "Player 1");
         player1 = (PlayerImpl) client1.getPlayer();
-        client2 = new DirectClient(underTest, game.getController(), "Player 1");
+        client2 = new DirectClient(underTest, game.getController(), "Player 2");
         player2 = (PlayerImpl) client2.getPlayer();
     }
 

@@ -72,13 +72,10 @@ abstract class PlayImpl implements Play
         playCards.clear();
     }
 
-    boolean initialise(Card[] cards) throws EngineException {
+    boolean initialise(Card[] cards) {
         // Validate arguments
         if(cards == null) {
             throw new IllegalArgumentException("Cannot initialise play with null array");
-        }
-        if(cards.length != 3) {
-            throw new InvalidPlayException("Must supply three cards to initialise a play");
         }
         // Run play builder
         PlayImpl pl = PlayBuilder.build(this, cards);
@@ -152,6 +149,16 @@ abstract class PlayImpl implements Play
         }
 
         private static boolean testCard(Card c, PlayImpl play, List<Card> remaining) {
+            // Validate arguments
+            if(c == null) {
+                log.info(String.format("[PlayBuilder] Cannot test null card"));
+                return false;
+            }
+            if(play == null) {
+                log.info(String.format("[PlayBuilder] Cannot test null play"));
+                return false;
+            }
+            
             log.debug(String.format("[PlayBuilder] Testing %s against %s", c, play));
             // Attempt to add card
             if(play.addCard(c)) {
@@ -184,13 +191,15 @@ abstract class PlayImpl implements Play
 
             ArrayList<Card> allCards = new ArrayList<Card>(Arrays.asList(cards));
             ArrayList<Card> remaining;
-            int ct = 0;
             PlayImpl pl;
 
-            do {
-                // Increment counter
-                ct ++;
+            // Initial validation
+            if(cards.length != 3) {
+                log.info(String.format("[PlayBuilder] Unable to build a play using %d cards, need 3 cards", cards.length));
+                return null;
+            }
 
+            do {
                 // Initialise new play
                 pl = initNewPlay(play);
 
@@ -204,7 +213,7 @@ abstract class PlayImpl implements Play
                     return pl;
                 }
 
-            } while(ct <= allCards.size());
+            } while(! cards[0].equals(allCards.get(0)));
 
             // No play could be built
             return null;
@@ -240,6 +249,22 @@ abstract class PlayImpl implements Play
                     pack.get(6)
                   , pack.get(7)
                   , pack.get(8)
+            };
+
+            RunImpl pl = new RunImpl();
+
+            System.out.println(pl.initialise(cards));
+            System.out.println(pl.size());
+            System.out.println(pl.pegCard(pack.get(9)));
+            System.out.println(pl.size());
+        }
+
+        System.out.println("-- UNORDERED RUN TEST --");
+        {
+            Card[] cards = new Card[] {
+                    pack.get(8)
+                    , pack.get(6)
+                    , pack.get(7)
             };
 
             RunImpl pl = new RunImpl();

@@ -10,6 +10,7 @@ import java.text.DateFormat;
 import java.text.SimpleDateFormat;
 import java.util.Arrays;
 import java.util.Date;
+import java.util.Iterator;
 
 /**
  * Engine implementation.
@@ -278,6 +279,10 @@ class EngineImpl implements Engine
         synchronized(clients.get(pl)) {
             log.trace(String.format("Entering discard(%s, %s)", player, card));
             try {
+                if(pl.getPlayerState() == PlayerState.PLAYING) {
+                    // Reset plays
+                    resetPlays(player);
+                }
                 // Validate pre-requisites
                 if(validatePlayer(pl, true, PlayerState.DISCARD, PlayerState.PLAYED)) {
                     // Remove card from hand
@@ -388,13 +393,36 @@ class EngineImpl implements Engine
             try {
                 // Validate pre-requisites
                 if(validatePlayer(pl, true, PlayerState.DISCARD, PlayerState.PLAYING)) {
-    
-                    if(game.getTable().getSeat(pl).getUninitialisedPlayCount() > 0) {
-                        // More plays needed
+                    // Update player state
+                    setPlayerState(pl, PlayerState.PLAYING);
 
-                        // Set player state
-                        setPlayerState(pl, PlayerState.PLAYING);
-                    } else {
+                    // Get available plays from table
+                    TableSeat seat = game.getTable().getSeat(pl);
+                    {
+                        log.debug(String.format("%d plays found, %d uninitialised", seat.size(), seat.getUninitialisedPlayCount()));
+                        Iterator<PlayImpl> plays = seat.iterator();
+
+                        boolean played = false;
+                        while(! played && plays.hasNext()) {
+                            // Get next play
+                            PlayImpl play = plays.next();
+                            log.debug(String.format("Attempting to initialise play %s", play));
+
+                            // If play is uninitialised, try and initialise it
+                            played = ! play.isInitialised() && play.initialise(cards);
+                            log.debug(String.format("Play %s, %s", (played ? "initialised" : "not initialised"), play));
+                        }
+
+                        if(! played) {
+                            // Unable to initialise any play
+                            log.warn(String.format("Unable to play cards %s", Arrays.toString(cards)));
+                            throw new InvalidPlayException("Unable to play cards");
+                        }
+                    }
+                    
+                    log.debug(String.format("Play created, %d uninitialised plays remain", seat.getUninitialisedPlayCount()));
+                    // Determine next state
+                    if(seat.getUninitialisedPlayCount() == 0) {
                         // All plays done, time to discard now
                         Play[] plays = game.getTable().getPlays(pl);
     
@@ -425,6 +453,21 @@ class EngineImpl implements Engine
             try {
                 // Validate pre-requisites
                 if(validatePlayer(pl, true, PlayerState.PEGGING)) {
+                    // Get player plays from the table
+                    TableSeat seat = game.getTable().getSeat(pl);
+                    
+                    // Lookup play
+                    PlayImpl pi = seat.lookupPlay(play);  
+                    if(pi == null) {
+                        log.warn(String.format("Could not find play %s for %s", play, player));
+                        throw new InvalidPlayException("Could not find play");
+                    }
+                    
+                    // Attempt to peg card
+                    if(! pi.pegCard(card)) {
+                        log.warn(String.format("Could not peg %s onto %s", card, play));
+                        throw new InvalidPlayException("Could not peg card onto play");
+                    }
 
                     // Queue notifications
                     queueEvent(new PegCardEvent(player, play, card));
@@ -455,8 +498,11 @@ class EngineImpl implements Engine
             try {
                 // Validate pre-requisites
                 if(validatePlayer(pl, true, PlayerState.PLAYING)) {
+                    // Get player plays from the table
+                    TableSeat seat = game.getTable().getSeat(pl);
 
-                    gameLog(String.format("%s reset plays", player));
+                    // Reset plays
+                    seat.resetAll();
 
                     // Set player state
                     setPlayerState(pl, PlayerState.DISCARD);

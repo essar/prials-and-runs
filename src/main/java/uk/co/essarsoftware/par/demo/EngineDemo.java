@@ -10,6 +10,9 @@ import uk.co.essarsoftware.par.engine.*;
 import uk.co.essarsoftware.par.engine.std.StdGameFactory;
 
 import java.util.Arrays;
+import java.util.Collections;
+import java.util.Comparator;
+import java.util.List;
 
 /**
  * Created with IntelliJ IDEA.
@@ -22,6 +25,24 @@ public class EngineDemo
 {
     private Game game;
     private Engine engine;
+    
+    private Card[] getSortedHand(GameClient cl) {
+        List<Card> cards = Arrays.asList(cl.getHand());
+        Collections.sort(cards, new Comparator<Card>() {
+            @Override
+            public int compare(Card c1, Card c2) {
+                if(c1 == null || c1.isJoker()) {
+                    return -1;
+                }
+                if(c2 == null || c2.isJoker()) {
+                    return 1;
+                }
+                // Sort by ascending value
+                return c1.getValue().compareTo(c2.getValue());
+            }
+        });
+        return cards.toArray(new Card[cards.size()]);
+    }
 
     public EngineDemo() {
         GameFactory gf = GameFactory.getInstance(StdGameFactory.class);
@@ -34,10 +55,12 @@ public class EngineDemo
         DemoClient cli3 = new DemoClient("Player 3");
 
         try {
+            long pause = 1000L;
+
             engine.startGame();
             System.out.println("Engine started");
             try {
-                Thread.sleep(5000L);
+                Thread.sleep(pause);
                 Card c = null;
                 if(game.getCurrentPlayer().equals(cli1.getPlayer())) {
                     c = cli1.pickupDraw();
@@ -48,7 +71,7 @@ public class EngineDemo
                 }
                 System.out.println("You picked up " + c);
 
-                Thread.sleep(5000L);
+                Thread.sleep(pause);
 
                 if(game.getCurrentPlayer().equals(cli1.getPlayer())) {
                     cli1.discard(cli1.getHand()[0]);
@@ -58,7 +81,28 @@ public class EngineDemo
                     cli3.discard(cli3.getHand()[0]);
                 }
 
-                Thread.sleep(5000L);
+                Thread.sleep(pause);
+
+                if(game.getCurrentPlayer().equals(cli1.getPlayer())) {
+                    c = cli1.pickupDiscard();
+                } else if(game.getCurrentPlayer().equals(cli2.getPlayer())) {
+                    c = cli2.pickupDiscard();
+                } else if(game.getCurrentPlayer().equals(cli3.getPlayer())) {
+                    c = cli3.pickupDiscard();
+                }
+                System.out.println("You picked up " + c);
+
+                Thread.sleep(pause);
+
+                if(game.getCurrentPlayer().equals(cli1.getPlayer())) {
+                    cli1.discard(cli1.getHand()[0]);
+                } else if(game.getCurrentPlayer().equals(cli2.getPlayer())) {
+                    cli2.discard(cli2.getHand()[0]);
+                } else if(game.getCurrentPlayer().equals(cli3.getPlayer())) {
+                    cli3.discard(cli3.getHand()[0]);
+                }
+
+                Thread.sleep(pause);
 
                 if(game.getCurrentPlayer().equals(cli1.getPlayer())) {
                     c = cli1.pickupDraw();
@@ -69,7 +113,38 @@ public class EngineDemo
                 }
                 System.out.println("You picked up " + c);
 
-                Thread.sleep(5000L);
+                Thread.sleep(pause);
+
+                if(game.getCurrentPlayer().equals(cli1.getPlayer())) {
+                    Card[] hand = getSortedHand(cli1);
+                    Card[] play = new Card[] {
+                            hand[0]
+                          , hand[1]
+                          , hand[2]
+                    };
+                    cli1.playCards(play);
+                    cli1.resetPlays();
+                } else if(game.getCurrentPlayer().equals(cli2.getPlayer())) {
+                    Card[] hand = getSortedHand(cli2);
+                    Card[] play = new Card[] {
+                            hand[0]
+                          , hand[1]
+                          , hand[2]
+                    };
+                    cli2.playCards(play);
+                    cli2.resetPlays();
+                } else if(game.getCurrentPlayer().equals(cli3.getPlayer())) {
+                    Card[] hand = getSortedHand(cli3);
+                    Card[] play = new Card[] {
+                            hand[0]
+                          , hand[1]
+                          , hand[2]
+                    };
+                    cli3.playCards(play);
+                    cli3.resetPlays();
+                }
+
+                Thread.sleep(pause);
 
                 if(game.getCurrentPlayer().equals(cli1.getPlayer())) {
                     cli1.discard(cli1.getHand()[0]);
@@ -79,28 +154,7 @@ public class EngineDemo
                     cli3.discard(cli3.getHand()[0]);
                 }
 
-                Thread.sleep(5000L);
-
-                if(game.getCurrentPlayer().equals(cli1.getPlayer())) {
-                    c = cli1.pickupDraw();
-                } else if(game.getCurrentPlayer().equals(cli2.getPlayer())) {
-                    c = cli2.pickupDraw();
-                } else if(game.getCurrentPlayer().equals(cli3.getPlayer())) {
-                    c = cli3.pickupDraw();
-                }
-                System.out.println("You picked up " + c);
-
-                Thread.sleep(5000L);
-
-                if(game.getCurrentPlayer().equals(cli1.getPlayer())) {
-                    cli1.discard(cli1.getHand()[0]);
-                } else if(game.getCurrentPlayer().equals(cli2.getPlayer())) {
-                    cli2.discard(cli2.getHand()[0]);
-                } else if(game.getCurrentPlayer().equals(cli3.getPlayer())) {
-                    cli3.discard(cli3.getHand()[0]);
-                }
-
-                Thread.sleep(5000L);
+                Thread.sleep(pause);
 
 
             } catch(InterruptedException ie) {
@@ -167,12 +221,16 @@ public class EngineDemo
 
         @Override
         public void cardsPlayed(Player player, Play[] play, boolean thisPlayer) {
-            //To change body of implemented methods use File | Settings | File Templates.
+            if(thisPlayer) {
+                System.out.println("Successfully played!");
+            }
         }
 
         @Override
         public void discardPickup(Player player, Card card, boolean thisPlayer) {
-            //To change body of implemented methods use File | Settings | File Templates.
+            if(! thisPlayer) {
+                System.out.println(String.format("[%s] Ooo... %s picked up %s from the discard pile", client.getPlayerName(), player.getPlayerName(), card));
+            }
         }
 
         @Override
