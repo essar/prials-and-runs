@@ -123,7 +123,7 @@ class GameImpl implements Game
             assert(currentRound != Round.START);
             assert(currentPlayer != null);
             assert(dealer != null);
-            assert(turn > 0);
+            assert(turn == 0);
         }
 
         return currentRound;
