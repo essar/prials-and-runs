@@ -741,6 +741,10 @@ class EngineImpl implements Engine
         // Initialise table objects
         game.getTable().initialiseRound(round);
 
+        // Queue notifications
+        queueEvent(new RoundStartedEvent(game.getCurrentPlayer(), round));
+        gameLog(String.format("Round started"));
+
         // Move to next player
         activate(game.nextPlayer());
 

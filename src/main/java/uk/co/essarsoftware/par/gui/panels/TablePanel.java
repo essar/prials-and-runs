@@ -18,6 +18,7 @@ import java.lang.reflect.InvocationTargetException;
  */
 public class TablePanel extends JPanel
 {
+    // Swing components
     private CardComponent discardPile, drawPile;
     private PlaysPanel[] plays;
 

@@ -20,10 +20,11 @@ import java.lang.reflect.InvocationTargetException;
  */
 public class HandPanel extends JPanel
 {
+
+    // Swing components
+    private CardComponent penaltyCard;
     private JButton btnMoveCardsDown, btnMoveCardsUp, btnSortBySuit, btnSortByValue;
     private JLabel lblCardCount, lblSelectedCount;
-
-    private CardComponent penaltyCard;
     private SelectableCardsPanel cards;
 
     public HandPanel() {
