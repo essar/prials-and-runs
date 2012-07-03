@@ -413,7 +413,12 @@ class EngineImpl implements Engine
                             log.debug(String.format("Play %s, %s", (played ? "initialised" : "not initialised"), play));
                         }
 
-                        if(! played) {
+                        if(played) {
+                            // Remove cards from player hand
+                            for(Card c : cards) {
+                                pl.discard(c);
+                            }
+                        } else {
                             // Unable to initialise any play
                             log.warn(String.format("Unable to play cards %s", Arrays.toString(cards)));
                             throw new InvalidPlayException("Unable to play cards");
@@ -464,7 +469,11 @@ class EngineImpl implements Engine
                     }
                     
                     // Attempt to peg card
-                    if(! pi.pegCard(card)) {
+                    if(pi.pegCard(card)) {
+                        // Remove from hand
+                        pl.discard(card);
+
+                    } else {
                         log.warn(String.format("Could not peg %s onto %s", card, play));
                         throw new InvalidPlayException("Could not peg card onto play");
                     }
@@ -500,6 +509,15 @@ class EngineImpl implements Engine
                 if(validatePlayer(pl, true, PlayerState.PLAYING)) {
                     // Get player plays from the table
                     TableSeat seat = game.getTable().getSeat(pl);
+
+                    // Add cards back to player hand
+                    for(PlayImpl pi : seat.getPlays()) {
+                        if(pi.isInitialised()) {
+                            for(Card c : pi.getCards()) {
+                                pl.pickup(c);
+                            }
+                        }
+                    }
 
                     // Reset plays
                     seat.resetAll();
