@@ -117,89 +117,74 @@ public class PlayerFrame extends JInternalFrame implements CommandPanel.ClientAc
     }
 
 
-    class DebugToolUI implements PlayerUI
+    class DebugToolUI extends SwingUI
     {
         @Override
-        public void buyApproved(Player player, Player buyer, Card card, boolean thisPlayer) {
+        public void asyncBuyApproved(Player player, Player buyer, Card card, boolean thisPlayer) {
             // Display info dialog if I am the buyer
         }
 
         @Override
-        public void buyRejected(Player player, Player buyer, Card card, boolean thisPlayer) {
+        public void asyncBuyRejected(Player player, Player buyer, Card card, boolean thisPlayer) {
             // Display info dialog if I am the buyer
         }
 
         @Override
-        public void buyRequest(Player player, Player buyer, Card card, boolean thisPlayer) {
+        public void asyncBuyRequest(Player player, Player buyer, Card card, boolean thisPlayer) {
             // Display decision dialog if I am the player
         }
 
         @Override
-        public void cardDiscarded(Player player, Card card, boolean thisPlayer) {
+        public void asyncCardDiscarded(Player player, Card card, boolean thisPlayer) {
         }
 
         @Override
-        public void cardPegged(Player player, Play play, Card card, boolean thisPlayer) {
+        public void asyncCardPegged(Player player, Play play, Card card, boolean thisPlayer) {
         }
 
         @Override
-        public void cardsPlayed(Player player, Play[] play, boolean thisPlayer) {
+        public void asyncCardsPlayed(Player player, Play[] play, boolean thisPlayer) {
         }
 
         @Override
-        public void discardPickup(Player player, Card card, boolean thisPlayer) {
+        public void asyncDiscardPickup(Player player, Card card, boolean thisPlayer) {
         }
 
         @Override
-        public void drawPickup(Player player, boolean thisPlayer) {
+        public void asyncDrawPickup(Player player, boolean thisPlayer) {
         }
 
         @Override
-        public void playerStateChange(Player player, PlayerState oldState, final PlayerState newState, final boolean thisPlayer) {
-            SwingUtilities.invokeLater(new Runnable() {
-                @Override
-                public void run() {
-                    if(thisPlayer) {
-                        lblPlayerState.setText(newState.name());
-                    }
-                }
-            });
+        public void asyncPlayerStateChange(Player player, PlayerState oldState, PlayerState newState, boolean thisPlayer) {
+            if(thisPlayer) {
+                lblPlayerState.setText(newState.name());
+            }
         }
 
         @Override
-        public void playerOut(Player player, boolean thisPlayer) {
+        public void asyncPlayerOut(Player player, boolean thisPlayer) {
             // Display notification dialog
         }
 
         @Override
-        public void roundEnded(Round round) {
+        public void asyncRoundEnded(Round round) {
             // Display notification dialog
         }
 
         @Override
-        public void roundStarted(final Round round) {
+        public void asyncRoundStarted(Round round) {
             // Set initial player hand
             System.out.println("Starting round ***");
-            SwingUtilities.invokeLater(new Runnable() {
-                @Override
-                public void run() {
-                    //pnlHand.reset();
-                    lblRound.setText(client.getCurrentRound().name());
-                    pnlHand.setCards(client.getHand());
-                }
-            });
+            //pnlHand.reset();
+            lblRound.setText(client.getCurrentRound().name());
+            pnlHand.setCards(client.getHand());
         }
 
         @Override
-        public void handleException(final EngineException ee) {
-            SwingUtilities.invokeLater(new Runnable() {
-                @Override
-                public void run() {
-                    // Display error dialog
-                    ExceptionDialog ed = new ExceptionDialog(PlayerFrame.this.main, ee);
-                    ed.setVisible(true);
-                }
-            });
+        public void asyncHandleException(EngineException ee) {
+            // Display error dialog
+            ExceptionDialog ed = new ExceptionDialog(PlayerFrame.this.main, ee);
+            ed.setVisible(true);
         }
     }
 
@@ -358,6 +343,8 @@ public class PlayerFrame extends JInternalFrame implements CommandPanel.ClientAc
         @Override
         public void actionPerformed(ActionEvent e) {
             client.resetPlays();
+            // Refresh hand
+            pnlHand.setCards(client.getHand());
         }
     }
 }
