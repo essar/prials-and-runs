@@ -7,7 +7,6 @@ import uk.co.essarsoftware.par.engine.*;
 import uk.co.essarsoftware.par.engine.events.*;
 
 import java.text.DateFormat;
-import java.text.SimpleDateFormat;
 import java.util.Arrays;
 import java.util.Date;
 import java.util.Iterator;
@@ -284,7 +283,7 @@ class EngineImpl implements Engine
                     resetPlays(player);
                 }
                 // Validate pre-requisites
-                if(validatePlayer(pl, true, PlayerState.DISCARD, PlayerState.PLAYED)) {
+                if(validatePlayer(pl, true, PlayerState.DISCARD, PlayerState.PEGGING, PlayerState.PLAYED)) {
                     // Remove card from hand
                     pl.discard(card);
 
@@ -392,6 +391,9 @@ class EngineImpl implements Engine
             log.trace(String.format("Entering playCards(%s, %s)", player, Arrays.toString(cards)));
             try {
                 // Validate pre-requisites
+                if(game.getTurn() <= 1) {
+                    throw new EngineException("Cannot play cards on first turn");
+                }
                 if(validatePlayer(pl, true, PlayerState.DISCARD, PlayerState.PLAYING)) {
                     // Update player state
                     setPlayerState(pl, PlayerState.PLAYING);
