@@ -2,18 +2,20 @@ package uk.co.essarsoftware.par.gui.debugtool;
 
 import uk.co.essarsoftware.games.cards.Card;
 import uk.co.essarsoftware.par.client.GameClient;
-import uk.co.essarsoftware.par.engine.*;
-import uk.co.essarsoftware.par.gui.dialogs.ExceptionDialog;
+import uk.co.essarsoftware.par.engine.Play;
+import uk.co.essarsoftware.par.engine.Player;
 import uk.co.essarsoftware.par.gui.panels.CommandPanel;
 import uk.co.essarsoftware.par.gui.panels.HandPanel;
-import uk.co.essarsoftware.par.gui.panels.TablePanel;
 
 import javax.swing.*;
 import javax.swing.border.BevelBorder;
 import java.awt.*;
 import java.awt.event.ActionEvent;
 import java.awt.event.KeyEvent;
+import java.beans.PropertyChangeEvent;
+import java.beans.PropertyChangeListener;
 import java.lang.reflect.InvocationTargetException;
+import java.util.ArrayList;
 
 /**
  * Created with IntelliJ IDEA.
@@ -28,14 +30,12 @@ public class PlayerFrame extends JInternalFrame implements CommandPanel.ClientAc
     private GameClient client;
     private Player buyer;
 
-    private Frame main;
-    private CommandPanel pnlCmd;
-    private HandPanel pnlHand;
-    private JLabel lblPlayerName, lblPlayerState, lblRound;
+    CommandPanel pnlCmd;
+    HandPanel pnlHand;
+    JLabel lblPlayerName, lblPlayerState, lblRound;
 
-    public PlayerFrame(Frame main, GameClient client) {
-        super(client.getPlayerName());
-        this.main = main;
+    public PlayerFrame(GameClient client) {
+        super(client.getPlayerName(), true);
         this.client = client;
 
         initComponents();
@@ -46,6 +46,13 @@ public class PlayerFrame extends JInternalFrame implements CommandPanel.ClientAc
 
     private void initComponents() {
         pnlHand = new HandPanel();
+        pnlHand.addPropertyChangeListener("selected", new PropertyChangeListener() {
+            @Override
+            public void propertyChange(PropertyChangeEvent evt) {
+                // Update buttons when a card is selected
+                refreshButtons();
+            }
+        });
 
         pnlCmd = new CommandPanel(this);
 
@@ -55,11 +62,11 @@ public class PlayerFrame extends JInternalFrame implements CommandPanel.ClientAc
 
         lblPlayerState = new JLabel(client.getPlayerState().name());
         lblPlayerState.setBorder(BorderFactory.createCompoundBorder(BorderFactory.createBevelBorder(BevelBorder.LOWERED), BorderFactory.createEmptyBorder(2, 10, 2, 10)));
-        lblPlayerState.setPreferredSize(new Dimension(80, 20));
+        lblPlayerState.setPreferredSize(new Dimension(100, 20));
 
         lblRound = new JLabel(client.getCurrentRound().name());
         lblRound.setBorder(BorderFactory.createCompoundBorder(BorderFactory.createBevelBorder(BevelBorder.LOWERED), BorderFactory.createEmptyBorder(2, 10, 2, 10)));
-        lblRound.setPreferredSize(new Dimension(100, 20));
+        lblRound.setPreferredSize(new Dimension(50, 20));
     }
 
     private void drawComponents() {
@@ -82,6 +89,10 @@ public class PlayerFrame extends JInternalFrame implements CommandPanel.ClientAc
         content.add(pnlHand, BorderLayout.CENTER);
 
         setContentPane(content);
+    }
+
+    void refreshButtons() {
+        pnlCmd.refreshButtons(client, pnlHand.getSelectedCardCount());
     }
 
     @Override
@@ -111,83 +122,6 @@ public class PlayerFrame extends JInternalFrame implements CommandPanel.ClientAc
         }
         return null;
     }
-
-    public PlayerUI generateUI() {
-        return new DebugToolUI();
-    }
-
-
-    class DebugToolUI extends SwingUI
-    {
-        @Override
-        public void asyncBuyApproved(Player player, Player buyer, Card card, boolean thisPlayer) {
-            // Display info dialog if I am the buyer
-        }
-
-        @Override
-        public void asyncBuyRejected(Player player, Player buyer, Card card, boolean thisPlayer) {
-            // Display info dialog if I am the buyer
-        }
-
-        @Override
-        public void asyncBuyRequest(Player player, Player buyer, Card card, boolean thisPlayer) {
-            // Display decision dialog if I am the player
-        }
-
-        @Override
-        public void asyncCardDiscarded(Player player, Card card, boolean thisPlayer) {
-        }
-
-        @Override
-        public void asyncCardPegged(Player player, Play play, Card card, boolean thisPlayer) {
-        }
-
-        @Override
-        public void asyncCardsPlayed(Player player, Play[] play, boolean thisPlayer) {
-        }
-
-        @Override
-        public void asyncDiscardPickup(Player player, Card card, boolean thisPlayer) {
-        }
-
-        @Override
-        public void asyncDrawPickup(Player player, boolean thisPlayer) {
-        }
-
-        @Override
-        public void asyncPlayerStateChange(Player player, PlayerState oldState, PlayerState newState, boolean thisPlayer) {
-            if(thisPlayer) {
-                lblPlayerState.setText(newState.name());
-            }
-        }
-
-        @Override
-        public void asyncPlayerOut(Player player, boolean thisPlayer) {
-            // Display notification dialog
-        }
-
-        @Override
-        public void asyncRoundEnded(Round round) {
-            // Display notification dialog
-        }
-
-        @Override
-        public void asyncRoundStarted(Round round) {
-            // Set initial player hand
-            System.out.println("Starting round ***");
-            //pnlHand.reset();
-            lblRound.setText(client.getCurrentRound().name());
-            pnlHand.setCards(client.getHand());
-        }
-
-        @Override
-        public void asyncHandleException(EngineException ee) {
-            // Display error dialog
-            ExceptionDialog ed = new ExceptionDialog(PlayerFrame.this.main, ee);
-            ed.setVisible(true);
-        }
-    }
-
 
     /* ***********************
      * CLIENT ACTION CLASSES
@@ -255,12 +189,49 @@ public class PlayerFrame extends JInternalFrame implements CommandPanel.ClientAc
 
         @Override
         public void actionPerformed(ActionEvent e) {
-            //TODO calculate/lookup play
-            Play play = null;
             Card card = pnlHand.getSelectedCards()[0];
-            client.pegCard(play, card);
-            // Refresh hand
-            pnlHand.setCards(client.getHand());
+
+            if(card.isJoker()) {
+                // Urgh! need to resolve joker
+                // TODO Resolve joker
+
+                ArrayList<Card> allowableCards = new ArrayList<Card>();
+                for(Play p : client.getPlays()) {
+                    // Look through allowable cards for our card
+                    for(Card c : p.getAllowableCards()) {
+                        allowableCards.add(c);
+                    }
+                }
+            }
+            ArrayList<Play> peggablePlays = new ArrayList<Play>();
+            for(Play p : client.getTable().getPlays()) {
+                if(p != null && p.isInitialised()) {
+                    // Look through allowable cards for our card
+                    for(Card c : p.getAllowableCards()) {
+                        if(c.sameCard(card)) {
+                            peggablePlays.add(p);
+                        }
+                    }
+                }
+            }
+
+            if(peggablePlays.size() == 0) {
+                // No plays available for card to be pegged to
+                System.out.println("No peggable plays found");
+            } else {
+                Play play;
+                if(peggablePlays.size() == 1) {
+                    // Peg to the play
+                    play = peggablePlays.get(0);
+                } else {
+                    // Ask player which play to use
+                    play = peggablePlays.get(0);
+                }
+
+                client.pegCard(play, card);
+                // Refresh hand
+                pnlHand.setCards(client.getHand());
+            }
         }
     }
 

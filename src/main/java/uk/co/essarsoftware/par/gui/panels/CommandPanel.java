@@ -1,7 +1,9 @@
 package uk.co.essarsoftware.par.gui.panels;
 
+import uk.co.essarsoftware.par.client.GameClient;
+import uk.co.essarsoftware.par.engine.PlayerState;
+
 import javax.swing.*;
-import javax.swing.border.BevelBorder;
 import java.awt.*;
 
 /**
@@ -27,7 +29,7 @@ public class CommandPanel extends JPanel
     }
 
     private void initComponents() {
-        Dimension btnSize = new Dimension(150, 75);
+        Dimension btnSize = new Dimension(150, 30);
 
         btnAcceptBuy = new JButton(caf.getClientAction("ApproveBuyAction"));
         btnAcceptBuy.setPreferredSize(btnSize);
@@ -73,6 +75,19 @@ public class CommandPanel extends JPanel
         btns.add(btnResetPlays);
 
         add(btns, BorderLayout.CENTER);
+    }
+
+    public void refreshButtons(GameClient client , int selectedCardCount) {
+        System.out.println("Refreshing buttons");
+        btnAcceptBuy.getAction().setEnabled(client.getPlayerState() == PlayerState.BUY_REQ);
+        btnBuy.getAction().setEnabled(client.isBuyAllowed() && client.getPlayerState() == PlayerState.WATCHING);
+        btnDiscard.getAction().setEnabled((client.getPlayerState() == PlayerState.DISCARD || client.getPlayerState() == PlayerState.PEGGING || client.getPlayerState() == PlayerState.PLAYED) && selectedCardCount == 1);
+        btnPegCard.getAction().setEnabled(client.getPlayerState() == PlayerState.PEGGING && selectedCardCount == 1);
+        btnPickupDiscard.getAction().setEnabled(client.getPlayerState() == PlayerState.PICKUP);
+        btnPickupDraw.getAction().setEnabled(client.getPlayerState() == PlayerState.PICKUP);
+        btnPlayCards.getAction().setEnabled((client.getPlayerState() == PlayerState.DISCARD || client.getPlayerState() == PlayerState.PLAYING) && selectedCardCount == 3);
+        btnRejectBuy.getAction().setEnabled(client.getPlayerState() == PlayerState.BUY_REQ);
+        btnResetPlays.getAction().setEnabled(client.getPlayerState() == PlayerState.PLAYING);
     }
 
     public static interface ClientActionFactory

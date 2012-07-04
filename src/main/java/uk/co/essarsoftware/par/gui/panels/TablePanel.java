@@ -1,13 +1,15 @@
 package uk.co.essarsoftware.par.gui.panels;
 
 import uk.co.essarsoftware.games.cards.Card;
+import uk.co.essarsoftware.par.engine.Play;
+import uk.co.essarsoftware.par.engine.Player;
+import uk.co.essarsoftware.par.engine.Round;
 import uk.co.essarsoftware.par.gui.components.CardComponent;
 
 import javax.swing.*;
-import java.awt.*;
 import java.awt.event.ActionEvent;
 import java.awt.event.ActionListener;
-import java.lang.reflect.InvocationTargetException;
+import java.util.HashMap;
 
 /**
  * Created by IntelliJ IDEA.
@@ -20,11 +22,11 @@ public class TablePanel extends JPanel
 {
     // Swing components
     private CardComponent discardPile, drawPile;
-    private PlaysPanel[] plays;
+    private HashMap<Player, PlaysPanel> plays;
 
     public TablePanel() {
-        setLayout(new GridBagLayout());
-        
+        setLayout(new BoxLayout(this, BoxLayout.PAGE_AXIS));
+
         initComponents();
         drawComponents();
     }
@@ -35,54 +37,51 @@ public class TablePanel extends JPanel
         
         drawPile = new CardComponent(false, false);
         drawPile.addActionListener(new DrawPileActionListener());
+        drawPile.setRenderNull(true);
 
-        plays = new PlaysPanel[0];
+        plays = new HashMap<Player, PlaysPanel>();
     }
     
     private void drawComponents() {
-        GridBagConstraints con = new GridBagConstraints();
-        con.gridwidth = 1;
-        con.gridx = 0; con.gridy = 0;
-        con.anchor = GridBagConstraints.EAST;
-        add(discardPile, con);
-        
-        con.gridx = 1;
-        con.anchor = GridBagConstraints.WEST;
-        add(drawPile, con);
-        
-        con.gridx = 0;
-        con.gridwidth = 2;
-        con.anchor = GridBagConstraints.NORTH;
-        con.gridy = GridBagConstraints.RELATIVE;
-        for(PlaysPanel pp : plays) {
-            add(pp, con);
+        JPanel piles = new JPanel();
+        piles.add(discardPile);
+        piles.add(drawPile);
+        add(piles);
+
+        for(Player p: plays.keySet()) {
+            add(new JLabel(p.getPlayerName()));
+            add(plays.get(p));
         }
+    }
+
+    public void addPlayer(Player player, Play[] playerPlays) {
+        // Create plays panel
+        PlaysPanel pp = new PlaysPanel(0);
+        pp.setPlays(playerPlays);
+        plays.put(player, pp);
+
+        // Add components
+        add(new JLabel(player.getPlayerName()));
+        add(pp);
+
+        // Flag container as changed so resizing can occur
+        invalidate();
     }
 
     public void setDiscard(Card card) {
         discardPile.setCard(card);
     }
-    
-    public static void main(String[] args) {
-        try {
-            SwingUtilities.invokeAndWait(new Runnable() {
-                @Override
-                public void run() {
-                    JFrame fr = new JFrame("TablePanel Test");
-                    fr.setDefaultCloseOperation(JFrame.EXIT_ON_CLOSE);
-                    fr.setLayout(new BorderLayout());
 
-                    TablePanel tp = new TablePanel();
-                    fr.add(tp, BorderLayout.CENTER);
+    public void setPlays(Player player, Play[] playerPlays) {
+        PlaysPanel pp = plays.get(player);
+        if(pp != null) {
+            pp.setPlays(playerPlays);
+        }
+    }
 
-                    fr.pack();
-                    fr.setVisible(true);
-                }
-            });
-        } catch(InvocationTargetException ite) {
-            System.err.println(ite);
-        } catch(InterruptedException ie) {
-            System.err.println(ie);
+    public void initRound(Round round) {
+        for(PlaysPanel pp : plays.values()) {
+            pp.reset(round.getPrials() + round.getRuns());
         }
     }
 

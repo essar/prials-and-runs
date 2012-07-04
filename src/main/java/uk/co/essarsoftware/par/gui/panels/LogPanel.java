@@ -85,12 +85,12 @@ public class LogPanel extends JTabbedPane
 
             lblLoggerLevel = new JLabel(log.getLevel().toString());
             lblLoggerLevel.setBorder(BorderFactory.createCompoundBorder(BorderFactory.createBevelBorder(BevelBorder.LOWERED), BorderFactory.createEmptyBorder(3, 10, 3, 10)));
-            lblLoggerLevel.setPreferredSize(new Dimension(65, 20));
+            lblLoggerLevel.setPreferredSize(new Dimension(80, 20));
 
 
             lblLoggerCounts = new JLabel(String.format("F:%d E:%d W:%d I:%d D:%d", 0, 0, 0, 0, 0));
             lblLoggerCounts.setBorder(BorderFactory.createCompoundBorder(BorderFactory.createBevelBorder(BevelBorder.LOWERED), BorderFactory.createEmptyBorder(3, 10, 3, 10)));
-            lblLoggerCounts.setPreferredSize(new Dimension(150, 20));
+            lblLoggerCounts.setPreferredSize(new Dimension(170, 20));
 
             tblLog = new LogTable(this, log);
 
@@ -110,7 +110,7 @@ public class LogPanel extends JTabbedPane
             SwingUtilities.invokeLater(new Runnable() {
                 @Override
                 public void run() {
-                    lblLoggerCounts.setText(String.format("F:%d E:%d W:%d I:%d D:%d", ctF, ctE, ctW, ctW, ctD));
+                    lblLoggerCounts.setText(String.format("F:%d E:%d W:%d I:%d D:%d", ctF, ctE, ctW, ctI, ctD));
                 }
             });
         }

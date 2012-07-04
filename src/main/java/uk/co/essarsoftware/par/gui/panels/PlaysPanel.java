@@ -1,9 +1,9 @@
 package uk.co.essarsoftware.par.gui.panels;
 
+import uk.co.essarsoftware.games.cards.Card;
 import uk.co.essarsoftware.par.engine.Play;
 
 import javax.swing.*;
-import java.awt.*;
 
 /**
  * Created by IntelliJ IDEA.
@@ -15,43 +15,37 @@ import java.awt.*;
 class PlaysPanel extends JPanel
 {
     private CardsPanel[] cards;
-    private JLabel lblPlayerName;
 
-    public PlaysPanel() {
-        setLayout(new BorderLayout());
-
+    public PlaysPanel(int sz) {
+        cards = new CardsPanel[sz];
         initComponents();
         drawComponents();
     }
 
     private void initComponents() {
-        lblPlayerName = new JLabel("Player");
-
-        cards = new CardsPanel[0];
+        for(int i = 0; i < cards.length; i ++) {
+            cards[i] = new CardsPanel();
+            cards[i].setCards(new Card[3]);
+        }
     }
     
     private void drawComponents() {
-        // Add player name
-        add(lblPlayerName, BorderLayout.NORTH);
-
-        // Add cards
-        Container plays = new Container();
-        plays.setLayout(new FlowLayout(20));
+        // Add panels
         for(CardsPanel cp : cards) {
-            plays.add(cp);
+            add(cp);
         }
-        add(plays, BorderLayout.CENTER);
     }
-    
+
+    public void reset(int sz) {
+        removeAll();
+        cards = new CardsPanel[sz];
+        initComponents();
+        drawComponents();
+    }
+
     public void setPlays(Play[] ps) {
-        cards = new CardsPanel[ps.length];
-        for(int i = 0; i < ps.length; i ++) {
-            cards[i] = new CardsPanel();
+        for(int i = 0; i < ps.length && i < cards.length; i ++) {
             cards[i].setCards(ps[i].getCards());
         }
-    }
-    
-    public void setPlayerName(String playerName) {
-        lblPlayerName.setText(playerName);
     }
 }

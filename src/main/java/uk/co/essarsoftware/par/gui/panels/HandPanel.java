@@ -1,8 +1,8 @@
 package uk.co.essarsoftware.par.gui.panels;
 
 import uk.co.essarsoftware.games.cards.Card;
-import uk.co.essarsoftware.par.gui.components.CardComponent;
 import uk.co.essarsoftware.par.gui.beans.CardBean;
+import uk.co.essarsoftware.par.gui.components.CardComponent;
 
 import javax.swing.*;
 import javax.swing.border.BevelBorder;
@@ -10,7 +10,6 @@ import java.awt.*;
 import java.awt.event.*;
 import java.beans.PropertyChangeEvent;
 import java.beans.PropertyChangeListener;
-import java.lang.reflect.InvocationTargetException;
 
 /**
  * <p>Swing panel responsible for displaying a player's hand of cards.</p>
@@ -136,8 +135,9 @@ public class HandPanel extends JPanel
         btnMoveCardsDown.getAction().setEnabled(getSelectedCardCount() > 0);
         btnMoveCardsUp.getAction().setEnabled(getSelectedCardCount() > 0);
 
-        // Update status component
+        // Update status components
         lblCardCount.setText(cards.getCardCount() + "");
+        lblSelectedCount.setText(getSelectedCardCount() + "");
     }
 
 
@@ -189,6 +189,9 @@ public class HandPanel extends JPanel
 
             // Update status component
             lblSelectedCount.setText(getSelectedCardCount() + "");
+
+            // Fire in parent panel
+            firePropertyChange(evt.getPropertyName(), evt.getOldValue(), evt.getNewValue());
         }
     }
     
@@ -245,40 +248,6 @@ public class HandPanel extends JPanel
         @Override
         public void actionPerformed(ActionEvent e) {
             sortByValue();
-        }
-    }
-    
-    public static void main(String[] args) {
-        final Card[] cards = new Card[] {
-                Card.createCard(Card.Suit.CLUBS, Card.Value.ACE)
-              , Card.createCard(Card.Suit.SPADES, Card.Value.SEVEN)
-              , Card.createCard(Card.Suit.DIAMONDS, Card.Value.THREE)
-              , Card.createCard(Card.Suit.HEARTS, Card.Value.KING)
-              , Card.createCard(Card.Suit.CLUBS, Card.Value.TWO)
-        };
-        
-        final HandPanel hp = new HandPanel();
-        final JFrame fr = new JFrame("HandPanel Test");
-
-        try {
-            SwingUtilities.invokeAndWait(new Runnable() {
-                @Override
-                public void run() {
-                    fr.setDefaultCloseOperation(JFrame.EXIT_ON_CLOSE);
-                    fr.setLayout(new BorderLayout());
-
-                    hp.setCards(cards);
-
-                    fr.add(hp, BorderLayout.CENTER);
-
-                    fr.pack();
-                    fr.setVisible(true);
-                }
-            });
-        } catch(InvocationTargetException ite) {
-            System.err.println(ite);
-        } catch(InterruptedException ie) {
-            System.err.println(ie);
         }
     }
 }

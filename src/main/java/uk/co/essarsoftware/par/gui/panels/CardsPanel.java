@@ -1,12 +1,15 @@
 package uk.co.essarsoftware.par.gui.panels;
 
 import uk.co.essarsoftware.games.cards.Card;
-import uk.co.essarsoftware.par.gui.components.CardComponent;
 import uk.co.essarsoftware.par.gui.beans.CardBean;
+import uk.co.essarsoftware.par.gui.components.CardComponent;
 
 import javax.swing.*;
 import java.awt.*;
-import java.util.*;
+import java.util.ArrayList;
+import java.util.Collections;
+import java.util.Comparator;
+import java.util.HashMap;
 
 /**
  * Swing panel holding an array of cards.
