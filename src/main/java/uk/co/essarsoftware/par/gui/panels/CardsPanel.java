@@ -6,10 +6,7 @@ import uk.co.essarsoftware.par.gui.beans.CardBean;
 
 import javax.swing.*;
 import java.awt.*;
-import java.util.ArrayList;
-import java.util.Collections;
-import java.util.Comparator;
-import java.util.HashMap;
+import java.util.*;
 
 /**
  * Swing panel holding an array of cards.
@@ -159,10 +156,13 @@ class CardsPanel extends JPanel
         Collections.sort(cards, new Comparator<CardBean>() {
             @Override
             public int compare(CardBean c1, CardBean c2) {
-                if (c1.getCard().sameSuit(c2.getCard())) {
-                    return c1.getCard().getValue().compareTo(c2.getCard().getValue());
+                if(c1 == null || c2 == null) {
+                    return 1;
                 }
-                return c1.getCard().getSuit().compareTo(c2.getCard().getSuit());
+                if(c1.equals(c2)) {
+                    return 0;
+                }
+                return (c1.getCard() == null ? -1 : c1.getCard().compareTo(c2.getCard()));
             }
         });
         refreshComponents();
@@ -172,10 +172,13 @@ class CardsPanel extends JPanel
         Collections.sort(cards, new Comparator<CardBean>() {
             @Override
             public int compare(CardBean c1, CardBean c2) {
-                if (c1.getCard().sameValue(c2.getCard())) {
-                    return c1.getCard().getSuit().compareTo(c2.getCard().getSuit());
+                if(c1 == null || c2 == null) {
+                    return 1;
                 }
-                return c1.getCard().getValue().compareTo(c2.getCard().getValue());
+                if(c1.equals(c2)) {
+                    return 0;
+                }
+                return (c1.getCard() == null ? -1 : c1.getCard().compareTo(c2.getCard(), true));
             }
         });
         refreshComponents();

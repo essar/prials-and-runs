@@ -13,6 +13,18 @@ public class CardBean
 {
     private Card card = null;
     private boolean faceUp = true;
+
+    @Override
+    public boolean equals(Object o) {
+        if(o == null) {
+            return false;
+        }
+        if(o instanceof CardBean) {
+            CardBean cb = (CardBean) o;
+            return card != null && card.equals(cb.card) && faceUp == cb.faceUp;
+        }
+        return false;
+    }
     
     public Card getCard() {
         return card;
