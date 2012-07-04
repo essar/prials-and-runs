@@ -461,10 +461,13 @@ class EngineImpl implements Engine
                 // Validate pre-requisites
                 if(validatePlayer(pl, true, PlayerState.PEGGING)) {
                     // Get player plays from the table
-                    TableSeat seat = game.getTable().getSeat(pl);
-                    
+                    Iterator<TableSeat> iter = game.getTable().getSeats().iterator();
+
                     // Lookup play
-                    PlayImpl pi = seat.lookupPlay(play);  
+                    PlayImpl pi = null;
+                    while(iter.hasNext() && pi == null) {
+                        pi = iter.next().lookupPlay(play);
+                    }
                     if(pi == null) {
                         log.warn(String.format("Could not find play %s for %s", play, player));
                         throw new InvalidPlayException("Could not find play");

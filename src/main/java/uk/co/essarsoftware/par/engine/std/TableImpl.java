@@ -2,12 +2,12 @@ package uk.co.essarsoftware.par.engine.std;
 
 import org.apache.log4j.Logger;
 import uk.co.essarsoftware.games.cards.*;
+import uk.co.essarsoftware.par.engine.Play;
 import uk.co.essarsoftware.par.engine.Player;
 import uk.co.essarsoftware.par.engine.Round;
 import uk.co.essarsoftware.par.engine.Table;
 
-import java.util.ArrayList;
-import java.util.HashMap;
+import java.util.*;
 
 /**
  * Table implementation class.
@@ -53,6 +53,10 @@ class TableImpl implements Table
             return null;
         }
         return seats.getSeat(player);
+    }
+
+    Collection<TableSeat> getSeats() {
+        return seats.values();
     }
 
     void removeSeat(PlayerImpl player) {
