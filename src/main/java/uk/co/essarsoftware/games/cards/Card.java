@@ -41,6 +41,10 @@ public class Card implements Comparable<Card>
      */
     @Override
     public int compareTo(Card c) {
+        return compareTo(c, false);
+    }
+
+    public int compareTo(Card c, boolean ignoreSuit) {
         if(c == null) {
             return 1;
         }
@@ -61,7 +65,7 @@ public class Card implements Comparable<Card>
             return (c.isBoundJoker() ? 1 : (packID == 0 ? -1 : c.packID == 0 ? 1 : (int) (c.packID - packID)));
         }
         // Same suit so sort by value, otherwise sort by suit
-        if(sameSuit(c)) {
+        if(ignoreSuit || sameSuit(c)) {
             return (c.getValue() == null ? 1 : getValue().compareTo(c.getValue()));
         } else {
             return (c.getSuit() == null ? 1 : getSuit().compareTo(c.getSuit()));
