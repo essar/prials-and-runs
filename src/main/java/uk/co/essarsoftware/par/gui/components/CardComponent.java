@@ -23,7 +23,7 @@ public class CardComponent extends JToggleButton
     public static final float G_RATIO = 1.6180339887f;
 
     // Component properties
-    private boolean selectable;
+    private boolean renderNull, selectable;
     private final SelectableCardProperty scp;
 
     // Drawing parameters
@@ -105,6 +105,10 @@ public class CardComponent extends JToggleButton
         return false;
     }
 
+    public boolean isRenderNull() {
+        return renderNull;
+    }
+
     public boolean isSelectable() {
         return selectable;
     }
@@ -131,7 +135,7 @@ public class CardComponent extends JToggleButton
         Shape bg = new RoundRectangle2D.Float(1.0f, 1.0f, cardWidth - 2.0f, cardHeight - 2.0f, cornerRoundedness, cornerRoundedness);
 
         // Draw
-        if(! (isFaceUp() && card == null)) {
+        if(isFaceUp() || card != null || renderNull) {
             // Draw containing rectangle
             g2D.setColor(Color.WHITE);
             g2D.fill(bg);
@@ -141,15 +145,13 @@ public class CardComponent extends JToggleButton
         g2D.setColor(Color.BLACK);
         g2D.draw(bg);
 
-        if(isFaceUp()) {
-            if(card != null) {
-                // Draw text
-                g2D.setColor(card.getSuit() == Card.Suit.CLUBS || card.getSuit() == Card.Suit.SPADES ? Color.BLACK : Color.RED);
-                g2D.drawString(card.toString(), 5, 20);
-                g2D.rotate(Math.PI, cardWidth / 2, cardHeight / 2);
-                g2D.drawString(card.toString(), 5, 20);
-            }
-        } else {
+        if(isFaceUp() && card != null) {
+            // Draw face of card
+            g2D.setColor(card.getSuit() == Card.Suit.CLUBS || card.getSuit() == Card.Suit.SPADES ? Color.BLACK : Color.RED);
+            g2D.drawString(card.toString(), 5, 20);
+            g2D.rotate(Math.PI, cardWidth / 2, cardHeight / 2);
+            g2D.drawString(card.toString(), 5, 20);
+        } else if(card != null || renderNull) {
             // Draw background of card
             g2D.setColor(Color.RED);
             for(float y = 10.0f; y < (cardHeight - 20.0f); y += 5.0f) {
@@ -176,6 +178,14 @@ public class CardComponent extends JToggleButton
      */
     public void setFaceUp(boolean faceUp) {
         scp.setFaceUp(faceUp);
+    }
+
+    /**
+     * Specify whether this card should be rendered, even when null.
+     * @param renderNull <tt>true</tt> to draw this card when null and face down, <tt>false</tt> otherwise.
+     */
+    public void setRenderNull(boolean renderNull) {
+        this.renderNull = renderNull;
     }
 
     /**
