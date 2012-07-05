@@ -467,6 +467,10 @@ class EngineClient implements GameClient
                 PlayerStateChangeEvent pscEvt = (PlayerStateChangeEvent) evt;
                 ui.playerStateChange(pscEvt.getPlayer(), pscEvt.getOldState(), pscEvt.getNewState(), thisPlayer);
             }
+            if(evt instanceof RoundEndedEvent) {
+                RoundEndedEvent reEvt = (RoundEndedEvent) evt;
+                ui.roundEnded(reEvt.getCurrentRound());
+            }
             if(evt instanceof RoundStartedEvent) {
                 RoundStartedEvent rsEvt = (RoundStartedEvent) evt;
                 ui.roundStarted(rsEvt.getCurrentRound());

@@ -820,6 +820,8 @@ class EngineImpl implements Engine
 
                     gameLog("Round won by " + winner);
 
+                    queueEvent(new RoundEndedEvent(winner, game.getCurrentRound()));
+
                 } catch(EngineException ee) {
                     log.error(String.format("%s when attempting to end round: %s", ee.getClass().getName(), ee.getMessage()));
                     log.debug(ee.getMessage(), ee);
@@ -843,6 +845,15 @@ class EngineImpl implements Engine
                         // Fire the player out event if the player has no more cards left
                         queueEvent(new PlayerOutEvent(pscEvt.getPlayer()));
                         break;
+                }
+            }
+            if(evt instanceof RoundEndedEvent) {
+                try {
+                    // Start the next round
+                    startRound();
+                } catch(EngineException ee) {
+                    log.error(String.format("%s when attempting to start round: %s", ee.getClass().getName(), ee.getMessage()));
+                    log.debug(ee.getMessage(), ee);
                 }
             }
         }
