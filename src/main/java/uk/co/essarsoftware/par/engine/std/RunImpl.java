@@ -68,6 +68,15 @@ class RunImpl extends PlayImpl implements Run
     }
 
     @Override
+    protected void cloneFrom(PlayImpl play) {
+        RunImpl run = (RunImpl) play;
+        super.cloneFrom(run);
+        hiVal = run.hiVal;
+        loVal = run.loVal;
+        runSuit = run.runSuit;
+    }
+
+    @Override
     protected void resetPlay() {
         super.resetPlay();
         loVal = null;

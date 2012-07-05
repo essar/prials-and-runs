@@ -133,7 +133,7 @@ public class DebugToolFrame extends JFrame
         public void asyncCardPegged(Player player, Play play, Card card, boolean thisPlayer) {
             // Only respond to this player events to prevent every player updating the same table elements
             if(thisPlayer) {
-                frTable.refresh(player);
+                frTable.refresh(client.getPlayers());
             }
         }
 
@@ -180,7 +180,11 @@ public class DebugToolFrame extends JFrame
 
         @Override
         public void asyncPlayerOut(Player player, boolean thisPlayer) {
+            // Only respond to this player events to prevent every player executing
             // Display notification dialog
+            if(thisPlayer) {
+                JOptionPane.showMessageDialog(DebugToolFrame.this, "Round won by " + player.getPlayerName(), "Round Finished", JOptionPane.INFORMATION_MESSAGE);
+            }
         }
 
         @Override

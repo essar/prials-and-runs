@@ -1,9 +1,14 @@
 package uk.co.essarsoftware.par.gui.debugtool;
 
 import uk.co.essarsoftware.games.cards.Card;
+import uk.co.essarsoftware.par.client.ClientAction;
+import uk.co.essarsoftware.par.client.DirectClient;
 import uk.co.essarsoftware.par.client.GameClient;
 import uk.co.essarsoftware.par.engine.Play;
+import uk.co.essarsoftware.par.engine.PlayBuilder;
 import uk.co.essarsoftware.par.engine.Player;
+import uk.co.essarsoftware.par.gui.dialogs.ResolveJokerDialog;
+import uk.co.essarsoftware.par.gui.dialogs.SelectPlayDialog;
 import uk.co.essarsoftware.par.gui.panels.CommandPanel;
 import uk.co.essarsoftware.par.gui.panels.HandPanel;
 
@@ -16,6 +21,7 @@ import java.beans.PropertyChangeEvent;
 import java.beans.PropertyChangeListener;
 import java.lang.reflect.InvocationTargetException;
 import java.util.ArrayList;
+import java.util.Arrays;
 
 /**
  * Created with IntelliJ IDEA.
@@ -27,14 +33,14 @@ import java.util.ArrayList;
 public class PlayerFrame extends JInternalFrame implements CommandPanel.ClientActionFactory
 {
     // Player client
-    private GameClient client;
+    private DirectClient client;
     private Player buyer;
 
     CommandPanel pnlCmd;
     HandPanel pnlHand;
     JLabel lblPlayerName, lblPlayerState, lblRound;
 
-    public PlayerFrame(GameClient client) {
+    public PlayerFrame(DirectClient client) {
         super(client.getPlayerName(), true);
         this.client = client;
 
@@ -126,6 +132,15 @@ public class PlayerFrame extends JInternalFrame implements CommandPanel.ClientAc
     /* ***********************
      * CLIENT ACTION CLASSES
      */
+    abstract class PARAction extends AbstractAction implements ClientAction
+    {
+        @Override
+        public void actionPerformed(ActionEvent evt) {
+            client.executeAction(this);
+        }
+    }
+
+
     public class ApproveBuyAction extends AbstractAction
     {
         ApproveBuyAction() {
@@ -179,7 +194,7 @@ public class PlayerFrame extends JInternalFrame implements CommandPanel.ClientAc
     }
 
 
-    public class PegCardAction extends AbstractAction
+    public class PegCardAction extends PARAction
     {
         PegCardAction() {
             putValue(Action.NAME, "Peg Card");
@@ -188,29 +203,31 @@ public class PlayerFrame extends JInternalFrame implements CommandPanel.ClientAc
         }
 
         @Override
-        public void actionPerformed(ActionEvent e) {
-            Card card = pnlHand.getSelectedCards()[0];
+        public void run(GameClient gc) {
+            PlayBuilder pb = PlayBuilder.createPlayBuilder(client);
+            final Card card = pnlHand.getSelectedCards()[0];
 
             if(card.isJoker()) {
-                // Urgh! need to resolve joker
-                // TODO Resolve joker
-
                 ArrayList<Card> allowableCards = new ArrayList<Card>();
                 for(Play p : client.getPlays()) {
                     // Look through allowable cards for our card
-                    for(Card c : p.getAllowableCards()) {
-                        allowableCards.add(c);
-                    }
+                    allowableCards.addAll(Arrays.asList(p.getAllowableCards()));
+                }
+
+                // Show dialog asking user the value of the joker
+                Card selectedCard = ResolveJokerDialog.showDialog(null, allowableCards.toArray(new Card[allowableCards.size()]));
+                if(selectedCard != null) {
+                    ((Card.Joker) card).bindTo(card);
+                } else {
+                    // Go no further
+                    return;
                 }
             }
             ArrayList<Play> peggablePlays = new ArrayList<Play>();
             for(Play p : client.getTable().getPlays()) {
                 if(p != null && p.isInitialised()) {
-                    // Look through allowable cards for our card
-                    for(Card c : p.getAllowableCards()) {
-                        if(c.sameCard(card)) {
-                            peggablePlays.add(p);
-                        }
+                    if(pb.isPeggable(p, card)) {
+                        peggablePlays.add(p);
                     }
                 }
             }
@@ -219,18 +236,29 @@ public class PlayerFrame extends JInternalFrame implements CommandPanel.ClientAc
                 // No plays available for card to be pegged to
                 System.out.println("No peggable plays found");
             } else {
-                Play play;
+                final Play play;
                 if(peggablePlays.size() == 1) {
                     // Peg to the play
                     play = peggablePlays.get(0);
                 } else {
                     // Ask player which play to use
-                    play = peggablePlays.get(0);
+                    Play selectedPlay = SelectPlayDialog.showDialog(null, peggablePlays.toArray(new Play[peggablePlays.size()]));
+                    if(selectedPlay != null) {
+                        play = selectedPlay;
+                    } else {
+                        // Go no further
+                        return;
+                    }
                 }
 
-                client.pegCard(play, card);
-                // Refresh hand
-                pnlHand.setCards(client.getHand());
+                SwingUtilities.invokeLater(new Runnable() {
+                    @Override
+                    public void run() {
+                        client.pegCard(play, card);
+                        // Refresh hand
+                        pnlHand.setCards(client.getHand());
+                    }
+                });
             }
         }
     }
@@ -267,7 +295,7 @@ public class PlayerFrame extends JInternalFrame implements CommandPanel.ClientAc
         }
     }
 
-    public class PlayCardsAction extends AbstractAction
+    public class PlayCardsAction extends PARAction
     {
         PlayCardsAction() {
             putValue(Action.NAME, "Play Cards");
@@ -276,11 +304,42 @@ public class PlayerFrame extends JInternalFrame implements CommandPanel.ClientAc
         }
 
         @Override
-        public void actionPerformed(ActionEvent e) {
-            Card[] cards = pnlHand.getSelectedCards();
-            client.playCards(cards);
-            // Refresh hand
-            pnlHand.setCards(client.getHand());
+        public void run(GameClient gc) {
+            final Card[] cards = pnlHand.getSelectedCards();
+            PlayBuilder pb = PlayBuilder.createPlayBuilder(client);
+
+            for(Card c : cards) {
+                if(c.isJoker()) {
+                    Card.Joker j = (Card.Joker) c;
+
+                    // Lookup list of possible joker values
+                    Card[] allowableCards = pb.getPossibleCards(j, client.getPlays(), cards);
+                    if(allowableCards.length == 0) {
+                        // No valid joker values
+                    } else if(allowableCards.length == 1) {
+                        // Use the only allowable value
+                        j.bindTo(allowableCards[0]);
+                    } else {
+                        // Show dialog asking user the value of the joker
+                        Card selectedCard = ResolveJokerDialog.showDialog(null, allowableCards);
+                        if(selectedCard != null) {
+                            j.bindTo(selectedCard);
+                        } else {
+                            // Go no further
+                            return;
+                        }
+                    }
+                }
+            }
+
+            SwingUtilities.invokeLater(new Runnable() {
+                @Override
+                public void run() {
+                    client.playCards(cards);
+                    // Refresh hand
+                    pnlHand.setCards(client.getHand());
+                }
+            });
         }
     }
 

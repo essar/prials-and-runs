@@ -3,6 +3,8 @@ package uk.co.essarsoftware.par.client;
 import uk.co.essarsoftware.games.cards.Card;
 import uk.co.essarsoftware.par.engine.*;
 
+import java.util.concurrent.ArrayBlockingQueue;
+
 /**
  * Created with IntelliJ IDEA.
  * User: sroberts
@@ -14,8 +16,17 @@ public class DirectClient extends DefaultClient implements PlayerUI
 {
     private PlayerUI ui;
 
+    private ArrayBlockingQueue<ClientAction> actionQueue;
+
     public DirectClient(Engine engine, GameController ctl, String playerName) {
         this.client = engine.createClient(ctl.createPlayer(playerName), this);
+        actionQueue = new ArrayBlockingQueue<ClientAction>(25);
+
+        new ClientActionThread().start();
+    }
+
+    public void executeAction(ClientAction action) {
+        actionQueue.add(action);
     }
 
     public void setUI(PlayerUI ui) {
@@ -124,5 +135,30 @@ public class DirectClient extends DefaultClient implements PlayerUI
             throw new IllegalStateException("Client not yet initialized with a child UI");
         }
         ui.handleException(ee);
+    }
+
+    class ClientActionThread extends Thread
+    {
+        private boolean running = true;
+
+        public ClientActionThread() {
+            super("Client-" + client.getPlayerName());
+        }
+
+        public void run() {
+            while(running) {
+                try {
+                    ClientAction r = actionQueue.take();
+                    r.run(DirectClient.this);
+                } catch(InterruptedException ie) {
+                    running = false;
+                }
+            }
+        }
+
+        public void stopThread() {
+            running = false;
+            interrupt();
+        }
     }
 }

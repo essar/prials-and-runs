@@ -17,6 +17,8 @@ public interface Game
 
     public Player getDealer();
 
+    public Class<? extends PlayBuilder> getPlayBuilderClass();
+
     public Player[] getPlayers();
 
     public Table getTable();

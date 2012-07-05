@@ -42,6 +42,13 @@ class PrialImpl extends PlayImpl implements Prial
     }
 
     @Override
+    protected void cloneFrom(PlayImpl play) {
+        PrialImpl prial = (PrialImpl) play;
+        super.cloneFrom(prial);
+        prialValue = prial.prialValue;
+    }
+
+    @Override
     protected void resetPlay() {
         super.resetPlay();
         prialValue = null;

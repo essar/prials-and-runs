@@ -103,6 +103,14 @@ public abstract class DefaultClient implements GameClient
     }
 
     @Override
+    public Class<? extends PlayBuilder> getPlayBuilderClass() {
+        if(client == null) {
+            throw new IllegalStateException("Client has not been initialized with a child client");
+        }
+        return client.getPlayBuilderClass();
+    }
+
+    @Override
     public Play[] getPlays() {
         if(client == null) {
             throw new IllegalStateException("Client has not yet been initialised with a child client");

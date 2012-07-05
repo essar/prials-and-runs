@@ -8,6 +8,7 @@ import java.awt.event.ActionEvent;
 import java.awt.event.KeyEvent;
 import java.awt.event.WindowAdapter;
 import java.awt.event.WindowEvent;
+import java.lang.reflect.InvocationTargetException;
 
 /**
  * Created with IntelliJ IDEA.
@@ -27,6 +28,10 @@ public class ResolveJokerDialog extends JDialog
     private JComboBox cmbCards;
     private JLabel lblMessage;
 
+    // Singleton variable for static invocation
+    private static ResolveJokerDialog rjd;
+    private static final String lock = "LOCK";
+
     public static final int OK_BUTTON = 1;
     public static final int CANCEL_BUTTON = 2;
     public static final int UNDEFINED = -1;
@@ -39,8 +44,8 @@ public class ResolveJokerDialog extends JDialog
         addWindowListener(new WindowAdapter() {
             @Override
             public void windowClosed(WindowEvent e) {
-                synchronized(ResolveJokerDialog.this) {
-                    ResolveJokerDialog.this.notifyAll();
+                synchronized(lock) {
+                    lock.notifyAll();
                 }
             }
         });
@@ -103,18 +108,41 @@ public class ResolveJokerDialog extends JDialog
         return selectedCard;
     }
 
-    public int showDialog() {
-        setVisible(true);
-        synchronized(this) {
-            while(output == UNDEFINED && isVisible()) {
-                try {
-                    wait();
-                } catch(InterruptedException ie) {
-                    // Nothing
+    public static Card showDialog(final Frame parent, final Card[] possibleCards) {
+        if(SwingUtilities.isEventDispatchThread()) {
+            // Gonna have deadlock here...
+            System.out.println("Not executing to prevent deadlock");
+        } else {
+            try {
+                SwingUtilities.invokeAndWait(new Runnable() {
+                    @Override
+                    public void run() {
+                        synchronized(lock) {
+                            rjd = new ResolveJokerDialog(parent, possibleCards);
+                            rjd.setVisible(true);
+                        }
+                    }
+                });
+            } catch(InvocationTargetException ite) {
+                ite.printStackTrace(System.err);
+            } catch(InterruptedException ie) {
+                // Nothing
+            }
+            synchronized(lock) {
+                while(rjd.output == UNDEFINED && rjd.isVisible()) {
+                    try {
+                        // Wait until a button has been pressed
+                        lock.wait();
+                    } catch(InterruptedException ie) {
+                        // Nothing
+                    }
+                }
+                if(rjd.output == OK_BUTTON) {
+                    return rjd.getSelectedCard();
                 }
             }
         }
-        return output;
+        return null;
     }
 
     private class CancelButtonAction extends AbstractAction
@@ -126,10 +154,10 @@ public class ResolveJokerDialog extends JDialog
 
         @Override
         public void actionPerformed(ActionEvent e) {
-            synchronized(ResolveJokerDialog.this) {
+            synchronized(lock) {
                 selectedCard = null;
                 output = CANCEL_BUTTON;
-                ResolveJokerDialog.this.notifyAll();
+                lock.notifyAll();
             }
             setVisible(false);
             dispose();
@@ -145,10 +173,10 @@ public class ResolveJokerDialog extends JDialog
 
         @Override
         public void actionPerformed(ActionEvent e) {
-            synchronized(ResolveJokerDialog.this) {
+            synchronized(lock) {
                 selectedCard = possibleCards[cmbCards.getSelectedIndex()];
                 output = OK_BUTTON;
-                ResolveJokerDialog.this.notifyAll();
+                lock.notifyAll();
             }
             setVisible(false);
             dispose();
@@ -171,17 +199,5 @@ public class ResolveJokerDialog extends JDialog
                 addCard(c);
             }
         }
-    }
-
-    public static void main(String[] args) {
-        Card[] cards = {
-                Card.createCard(Card.Suit.CLUBS, Card.Value.FIVE)
-              , Card.createCard(Card.Suit.DIAMONDS, Card.Value.FIVE)
-              , Card.createCard(Card.Suit.HEARTS, Card.Value.FIVE)
-              , Card.createCard(Card.Suit.SPADES, Card.Value.FIVE)
-        };
-        ResolveJokerDialog rjd = new ResolveJokerDialog(null, cards);
-        System.out.println(rjd.showDialog());
-        System.out.println(rjd.getSelectedCard());
     }
 }

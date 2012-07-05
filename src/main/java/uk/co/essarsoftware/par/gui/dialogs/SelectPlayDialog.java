@@ -1,6 +1,5 @@
 package uk.co.essarsoftware.par.gui.dialogs;
 
-import uk.co.essarsoftware.games.cards.Card;
 import uk.co.essarsoftware.par.engine.Play;
 
 import javax.swing.*;
@@ -9,6 +8,7 @@ import java.awt.event.ActionEvent;
 import java.awt.event.KeyEvent;
 import java.awt.event.WindowAdapter;
 import java.awt.event.WindowEvent;
+import java.lang.reflect.InvocationTargetException;
 import java.util.Arrays;
 
 /**
@@ -29,6 +29,10 @@ public class SelectPlayDialog extends JDialog
     private JComboBox cmbCards;
     private JLabel lblMessage;
 
+    // Singleton variable for static invocation
+    private static SelectPlayDialog spd;
+    private static final String lock = "LOCK";
+
     public static final int OK_BUTTON = 1;
     public static final int CANCEL_BUTTON = 2;
     public static final int UNDEFINED = -1;
@@ -41,8 +45,8 @@ public class SelectPlayDialog extends JDialog
         addWindowListener(new WindowAdapter() {
             @Override
             public void windowClosed(WindowEvent e) {
-                synchronized(SelectPlayDialog.this) {
-                    SelectPlayDialog.this.notifyAll();
+                synchronized(lock) {
+                    lock.notifyAll();
                 }
             }
         });
@@ -105,18 +109,41 @@ public class SelectPlayDialog extends JDialog
         return selectedPlay;
     }
 
-    public int showDialog() {
-        setVisible(true);
-        synchronized(this) {
-            while(output == UNDEFINED && isVisible()) {
-                try {
-                    wait();
-                } catch(InterruptedException ie) {
-                    // Nothing
+    public static Play showDialog(final Frame parent, final Play[] plays) {
+        if(SwingUtilities.isEventDispatchThread()) {
+            // Gonna have deadlock here...
+            System.out.println("Not executing to prevent deadlock");
+        } else {
+            try {
+                SwingUtilities.invokeAndWait(new Runnable() {
+                    @Override
+                    public void run() {
+                        synchronized(lock) {
+                            spd = new SelectPlayDialog(parent, plays);
+                            spd.setVisible(true);
+                        }
+                    }
+                });
+            } catch(InvocationTargetException ite) {
+                ite.printStackTrace(System.err);
+            } catch(InterruptedException ie) {
+                // Nothing
+            }
+            synchronized(lock) {
+                while(spd.output == UNDEFINED && spd.isVisible()) {
+                    try {
+                        // Wait until a button has been pressed
+                        lock.wait();
+                    } catch(InterruptedException ie) {
+                        // Nothing
+                    }
+                }
+                if(spd.output == OK_BUTTON) {
+                    return spd.getSelectedPlay();
                 }
             }
         }
-        return output;
+        return null;
     }
 
     private class CancelButtonAction extends AbstractAction
@@ -128,10 +155,10 @@ public class SelectPlayDialog extends JDialog
 
         @Override
         public void actionPerformed(ActionEvent e) {
-            synchronized(SelectPlayDialog.this) {
+            synchronized(lock) {
                 selectedPlay = null;
                 output = CANCEL_BUTTON;
-                SelectPlayDialog.this.notifyAll();
+                lock.notifyAll();
             }
             setVisible(false);
             dispose();
@@ -147,10 +174,10 @@ public class SelectPlayDialog extends JDialog
 
         @Override
         public void actionPerformed(ActionEvent e) {
-            synchronized(SelectPlayDialog.this) {
+            synchronized(lock) {
                 selectedPlay = possiblePlays[cmbCards.getSelectedIndex()];
                 output = OK_BUTTON;
-                SelectPlayDialog.this.notifyAll();
+                lock.notifyAll();
             }
             setVisible(false);
             dispose();
@@ -173,48 +200,5 @@ public class SelectPlayDialog extends JDialog
                 addPlay(p);
             }
         }
-    }
-
-    public static void main(String[] args) {
-        Play p1 = new Play() {
-            @Override
-            public Card[] getAllowableCards() {
-                return new Card[0];  //To change body of implemented methods use File | Settings | File Templates.
-            }
-
-            @Override
-            public Card[] getCards() {
-                return new Card[] { Card.createCard(Card.Suit.CLUBS, Card.Value.FIVE)
-                              , Card.createCard(Card.Suit.DIAMONDS, Card.Value.FIVE)
-                              , Card.createCard(Card.Suit.HEARTS, Card.Value.FIVE)
-                              , Card.createCard(Card.Suit.SPADES, Card.Value.FIVE)
-                };
-            }
-
-            @Override
-            public boolean isInitialised() {
-                return false;  //To change body of implemented methods use File | Settings | File Templates.
-            }
-
-            @Override
-            public boolean isPrial() {
-                return false;  //To change body of implemented methods use File | Settings | File Templates.
-            }
-
-            @Override
-            public boolean isRun() {
-                return false;  //To change body of implemented methods use File | Settings | File Templates.
-            }
-
-            @Override
-            public int size() {
-                return 0;  //To change body of implemented methods use File | Settings | File Templates.
-            }
-        };
-
-        Play[] plays = { p1 };
-        SelectPlayDialog rjd = new SelectPlayDialog(null, plays);
-        System.out.println(rjd.showDialog());
-        System.out.println(rjd.getSelectedPlay());
     }
 }

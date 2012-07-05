@@ -155,6 +155,11 @@ class GameImpl implements Game
     }
 
     @Override
+    public Class<? extends PlayBuilder> getPlayBuilderClass() {
+        return PlayImpl.PlayImplBuilder.class;
+    }
+
+    @Override
     public PlayerImpl[] getPlayers() {
         return players.getPlayers();
     }

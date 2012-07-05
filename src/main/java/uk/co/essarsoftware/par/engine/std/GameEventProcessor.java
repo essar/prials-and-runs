@@ -9,7 +9,7 @@ import uk.co.essarsoftware.par.engine.events.GameEvent;
  * Time: 15:02
  * To change this template use File | Settings | File Templates.
  */
-public interface GameEventProcessor
+interface GameEventProcessor
 {
     public void processEvent(GameEvent evt);
 }

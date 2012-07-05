@@ -320,6 +320,14 @@ class EngineClient implements GameClient
     }
 
     @Override
+    public Class<? extends PlayBuilder> getPlayBuilderClass() {
+        if(game == null) {
+            throw new IllegalStateException("Client has not been initialized with a Game");
+        }
+        return game.getPlayBuilderClass();
+    }
+
+    @Override
     public Player[] getPlayers() {
         if(game == null) {
             throw new IllegalStateException("Client has not been initialized with a Game");

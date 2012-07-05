@@ -46,8 +46,14 @@ public class TableFrame extends JInternalFrame
     }
 
     void refresh(Player player) {
+        refresh(new Player[] {player});
+    }
+
+    void refresh(Player[] players) {
         refresh();
-        pnlTable.setPlays(player, table.getPlays(player));
+        for(Player player : players) {
+            pnlTable.setPlays(player, table.getPlays(player));
+        }
         pack();
     }
 }
