@@ -1,5 +1,7 @@
 package uk.co.essarsoftware.par.engine;
 
+import uk.co.essarsoftware.par.engine.scorecard.Scorecard;
+
 /**
  * Created with IntelliJ IDEA.
  * User: sroberts
@@ -20,6 +22,8 @@ public interface Game
     public Class<? extends PlayBuilder> getPlayBuilderClass();
 
     public Player[] getPlayers();
+
+    public Scorecard getScorecard();
 
     public Table getTable();
 

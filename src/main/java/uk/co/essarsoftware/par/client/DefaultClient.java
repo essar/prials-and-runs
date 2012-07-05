@@ -2,6 +2,7 @@ package uk.co.essarsoftware.par.client;
 
 import uk.co.essarsoftware.games.cards.Card;
 import uk.co.essarsoftware.par.engine.*;
+import uk.co.essarsoftware.par.engine.scorecard.Scorecard;
 
 /**
  * Created with IntelliJ IDEA.
@@ -172,6 +173,14 @@ public abstract class DefaultClient implements GameClient
             throw new IllegalStateException("Client has not yet been initialised with a child client");
         }
         return client.getPlayers();
+    }
+
+    @Override
+    public Scorecard getScorecard() {
+        if(client == null) {
+            throw new IllegalStateException("Client has not yet been initialised with a child client");
+        }
+        return client.getScorecard();
     }
 
     @Override

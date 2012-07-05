@@ -190,6 +190,11 @@ public class DebugToolFrame extends JFrame
         @Override
         public void asyncRoundEnded(Round round) {
             // Display notification dialog
+
+            // End of round dialog
+            if(JOptionPane.showConfirmDialog(DebugToolFrame.this, "Begin next round?", "Prials and Runs", JOptionPane.YES_NO_OPTION, JOptionPane.QUESTION_MESSAGE) == JOptionPane.YES_OPTION) {
+                // Start next round in utility thread
+            }
         }
 
         @Override

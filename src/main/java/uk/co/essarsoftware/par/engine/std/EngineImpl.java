@@ -286,6 +286,9 @@ class EngineImpl implements Engine
                 if(validatePlayer(pl, true, PlayerState.DISCARD, PlayerState.PEGGING, PlayerState.PLAYED)) {
                     // Remove card from hand
                     pl.discard(card);
+                    if(card.isJoker()) {
+                        game.getScorecard().recordJoker(game.getCurrentRound(), pl);
+                    }
 
                     // Add card to table
                     game.getTable().discard(card);
@@ -419,6 +422,9 @@ class EngineImpl implements Engine
                             // Remove cards from player hand
                             for(Card c : cards) {
                                 pl.discard(c);
+                                if(c.isJoker()) {
+                                    game.getScorecard().recordJoker(game.getCurrentRound(), pl);
+                                }
                             }
                         } else {
                             // Unable to initialise any play
@@ -477,6 +483,9 @@ class EngineImpl implements Engine
                     if(pi.pegCard(card)) {
                         // Remove from hand
                         pl.discard(card);
+                        if(card.isJoker()) {
+                            game.getScorecard().recordJoker(game.getCurrentRound(), pl);
+                        }
 
                     } else {
                         log.warn(String.format("Could not peg %s onto %s", card, play));
@@ -520,6 +529,9 @@ class EngineImpl implements Engine
                         if(pi.isInitialised()) {
                             for(Card c : pi.getCards()) {
                                 pl.pickup(c);
+                                if(c.isJoker()) {
+                                    game.getScorecard().unrecordJoker(game.getCurrentRound(), pl);
+                                }
                             }
                         }
                     }
@@ -715,6 +727,8 @@ class EngineImpl implements Engine
             log.warn(String.format("Attempting to start game already in progress, in %s round", game.getCurrentRound()));
             throw new EngineException("Game already in progress");
         } else {
+            game.getScorecard().initAllRounds();
+
             // Start internal processor
             iep.startProcessor();
 
@@ -787,6 +801,30 @@ class EngineImpl implements Engine
 
         @Override
         public void processEvent(GameEvent evt) {
+            if(evt instanceof PlayerOutEvent) {
+                PlayerOutEvent poEvt = (PlayerOutEvent) evt;
+                try {
+                    PlayerImpl winner = getPlayerImpl(poEvt.getPlayer());
+                    PlayerImpl player = winner;
+                    do {
+                        player = game.getNextPlayer(player);
+
+                        // Calculate player's score & update scorecard
+                        int score = game.getScorecard().calculateScore(game.getCurrentRound(), player);
+                        log.info(String.format("%s scored %d", player, score));
+
+                        // Set player state to init
+                        setPlayerState(player, PlayerState.INIT);
+
+                    } while(player != winner);
+
+                    gameLog("Round won by " + winner);
+
+                } catch(EngineException ee) {
+                    log.error(String.format("%s when attempting to end round: %s", ee.getClass().getName(), ee.getMessage()));
+                    log.debug(ee.getMessage(), ee);
+                }
+            }
             if(evt instanceof PlayerStateChangeEvent) {
                 PlayerStateChangeEvent pscEvt = (PlayerStateChangeEvent) evt;
 
@@ -802,6 +840,7 @@ class EngineImpl implements Engine
                         }
                         break;
                     case FINISHED:
+                        // Fire the player out event if the player has no more cards left
                         queueEvent(new PlayerOutEvent(pscEvt.getPlayer()));
                         break;
                 }

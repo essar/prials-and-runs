@@ -5,6 +5,7 @@ import uk.co.essarsoftware.games.cards.Card;
 import uk.co.essarsoftware.par.client.GameClient;
 import uk.co.essarsoftware.par.engine.*;
 import uk.co.essarsoftware.par.engine.events.*;
+import uk.co.essarsoftware.par.engine.scorecard.Scorecard;
 
 import java.util.Arrays;
 
@@ -333,6 +334,14 @@ class EngineClient implements GameClient
             throw new IllegalStateException("Client has not been initialized with a Game");
         }
         return game.getPlayers();
+    }
+
+    @Override
+    public Scorecard getScorecard() {
+        if(game == null) {
+            throw new IllegalStateException("Client has not been initialized with a Game");
+        }
+        return game.getScorecard();
     }
 
     @Override

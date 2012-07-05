@@ -2,6 +2,7 @@ package uk.co.essarsoftware.par.engine.std;
 
 import org.apache.log4j.Logger;
 import uk.co.essarsoftware.par.engine.*;
+import uk.co.essarsoftware.par.engine.scorecard.Scorecard;
 
 /**
  * Created with IntelliJ IDEA.
@@ -20,11 +21,13 @@ class GameImpl implements Game
 
     private final GameImplController ctl;
     private final GamePlayerList players;
+    private final ScorecardImpl scorecard;
     private final TableImpl table;
 
     public GameImpl() {
         ctl = new GameImplController();
         players = new GamePlayerList();
+        scorecard = new ScorecardImpl();
         currentRound = Round.START;
         log.debug(String.format("Current round set to %s", currentRound));
 
@@ -165,6 +168,11 @@ class GameImpl implements Game
     }
 
     @Override
+    public ScorecardImpl getScorecard() {
+        return scorecard;
+    }
+
+    @Override
     public TableImpl getTable() {
         return table;
     }
@@ -181,6 +189,7 @@ class GameImpl implements Game
             PlayerImpl player = new PlayerImpl(playerName);
             players.add(player);
             table.createSeat(player);
+            scorecard.addPlayer(player);
             log.debug(String.format("Player %s created", player));
 
             return player;
