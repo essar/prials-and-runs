@@ -269,6 +269,5 @@ public class DebugToolFrame extends JFrame
         } catch(EngineException ee) {
             System.err.println(ee);
         }
-
     }
 }
