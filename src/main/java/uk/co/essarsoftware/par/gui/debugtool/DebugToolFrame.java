@@ -11,6 +11,8 @@ import uk.co.essarsoftware.par.gui.dialogs.ExceptionDialog;
 
 import javax.swing.*;
 import java.awt.*;
+import java.awt.event.WindowAdapter;
+import java.awt.event.WindowEvent;
 import java.beans.PropertyVetoException;
 import java.lang.reflect.InvocationTargetException;
 import java.util.HashMap;
@@ -245,6 +247,13 @@ public class DebugToolFrame extends JFrame
 
                     dtf.addLog("Root", Logger.getRootLogger());
 
+                    dtf.addWindowListener(new WindowAdapter() {
+                        @Override
+                        public void windowClosed(WindowEvent e) {
+                            engine.abortGame();
+                        }
+                    });
+
                     dtf.setVisible(true);
                 }
             });
@@ -262,6 +271,4 @@ public class DebugToolFrame extends JFrame
         }
 
     }
-
-
 }
