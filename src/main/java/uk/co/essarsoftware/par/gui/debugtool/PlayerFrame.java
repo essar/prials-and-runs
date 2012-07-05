@@ -229,7 +229,7 @@ public class PlayerFrame extends JInternalFrame implements CommandPanel.ClientAc
                 // Show dialog asking user the value of the joker
                 Card selectedCard = ResolveJokerDialog.showDialog(null, allowableCards.toArray(new Card[allowableCards.size()]));
                 if(selectedCard != null) {
-                    ((Card.Joker) card).bindTo(card);
+                    ((Card.Joker) card).bindTo(selectedCard);
                 } else {
                     // Go no further
                     return;
