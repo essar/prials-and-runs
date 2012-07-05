@@ -141,7 +141,7 @@ public class PlayerFrame extends JInternalFrame implements CommandPanel.ClientAc
     }
 
 
-    public class ApproveBuyAction extends AbstractAction
+    public class ApproveBuyAction extends PARAction
     {
         ApproveBuyAction() {
             putValue(Action.NAME, "Accept Buy");
@@ -150,17 +150,23 @@ public class PlayerFrame extends JInternalFrame implements CommandPanel.ClientAc
         }
 
         @Override
-        public void actionPerformed(ActionEvent e) {
+        public void run(GameClient gc) {
             if(buyer != null) {
                 client.approveBuy(buyer);
-                // Refresh hand
-                pnlHand.setCards(client.getHand());
+
+                SwingUtilities.invokeLater(new Runnable() {
+                    @Override
+                    public void run() {
+                        // Refresh hand
+                        pnlHand.setCards(client.getHand());
+                    }
+                });
             }
             buyer = null;
         }
     }
 
-    public class BuyAction extends AbstractAction
+    public class BuyAction extends PARAction
     {
         BuyAction() {
             putValue(Action.NAME, "Buy");
@@ -169,14 +175,14 @@ public class PlayerFrame extends JInternalFrame implements CommandPanel.ClientAc
         }
 
         @Override
-        public void actionPerformed(ActionEvent e) {
+        public void run(GameClient gc) {
             Player currentPlayer = client.getCurrentPlayer();
             Card discard = client.getTable().getDiscard();
             client.buy(currentPlayer, discard);
         }
     }
 
-    public class DiscardAction extends AbstractAction
+    public class DiscardAction extends PARAction
     {
         DiscardAction() {
             putValue(Action.NAME, "Discard");
@@ -185,11 +191,17 @@ public class PlayerFrame extends JInternalFrame implements CommandPanel.ClientAc
         }
 
         @Override
-        public void actionPerformed(ActionEvent e) {
+        public void run(GameClient gc) {
             Card discard = pnlHand.getSelectedCards()[0];
             client.discard(discard);
-            // Refresh hand
-            pnlHand.setCards(client.getHand());
+
+            SwingUtilities.invokeLater(new Runnable() {
+                @Override
+                public void run() {
+                    // Refresh hand
+                    pnlHand.setCards(client.getHand());
+                }
+            });
         }
     }
 
@@ -263,7 +275,7 @@ public class PlayerFrame extends JInternalFrame implements CommandPanel.ClientAc
         }
     }
 
-    public class PickupDiscardAction extends AbstractAction
+    public class PickupDiscardAction extends PARAction
     {
         PickupDiscardAction() {
             putValue(Action.NAME, "Pickup Discard");
@@ -272,14 +284,20 @@ public class PlayerFrame extends JInternalFrame implements CommandPanel.ClientAc
         }
 
         @Override
-        public void actionPerformed(ActionEvent e) {
+        public void run(GameClient gc) {
             client.pickupDiscard();
-            // Refresh hand
-            pnlHand.setCards(client.getHand());
+
+            SwingUtilities.invokeLater(new Runnable() {
+                @Override
+                public void run() {
+                    // Refresh hand
+                    pnlHand.setCards(client.getHand());
+                }
+            });
         }
     }
 
-    public class PickupDrawAction extends AbstractAction
+    public class PickupDrawAction extends PARAction
     {
         PickupDrawAction() {
             putValue(Action.NAME, "Pickup Draw");
@@ -288,10 +306,16 @@ public class PlayerFrame extends JInternalFrame implements CommandPanel.ClientAc
         }
 
         @Override
-        public void actionPerformed(ActionEvent e) {
+        public void run(GameClient gc) {
             client.pickupDraw();
-            // Refresh hand
-            pnlHand.setCards(client.getHand());
+
+            SwingUtilities.invokeLater(new Runnable() {
+                @Override
+                public void run() {
+                    // Refresh hand
+                    pnlHand.setCards(client.getHand());
+                }
+            });
         }
     }
 
@@ -343,7 +367,7 @@ public class PlayerFrame extends JInternalFrame implements CommandPanel.ClientAc
         }
     }
 
-    public class RejectBuyAction extends AbstractAction
+    public class RejectBuyAction extends PARAction
     {
         RejectBuyAction() {
             putValue(Action.NAME, "Reject Buy");
@@ -352,17 +376,23 @@ public class PlayerFrame extends JInternalFrame implements CommandPanel.ClientAc
         }
 
         @Override
-        public void actionPerformed(ActionEvent e) {
+        public void run(GameClient gc) {
             if(buyer != null) {
                 client.rejectBuy(buyer);
-                // Refresh hand
-                pnlHand.setCards(client.getHand());
+
+                SwingUtilities.invokeLater(new Runnable() {
+                    @Override
+                    public void run() {
+                        // Refresh hand
+                        pnlHand.setCards(client.getHand());
+                    }
+                });
             }
             buyer = null;
         }
     }
 
-    public class ResetPlaysAction extends AbstractAction
+    public class ResetPlaysAction extends PARAction
     {
         ResetPlaysAction() {
             putValue(Action.NAME, "Reset");
@@ -371,10 +401,16 @@ public class PlayerFrame extends JInternalFrame implements CommandPanel.ClientAc
         }
 
         @Override
-        public void actionPerformed(ActionEvent e) {
+        public void run(GameClient gc) {
             client.resetPlays();
-            // Refresh hand
-            pnlHand.setCards(client.getHand());
+
+            SwingUtilities.invokeLater(new Runnable() {
+                @Override
+                public void run() {
+                    // Refresh hand
+                    pnlHand.setCards(client.getHand());
+                }
+            });
         }
     }
 }
