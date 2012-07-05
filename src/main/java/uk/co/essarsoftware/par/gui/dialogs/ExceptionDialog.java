@@ -6,7 +6,6 @@ import java.awt.*;
 import java.awt.event.ActionEvent;
 import java.awt.event.KeyEvent;
 import java.io.*;
-import java.util.Arrays;
 import java.util.regex.Pattern;
 
 /**
@@ -39,7 +38,7 @@ public class ExceptionDialog extends JDialog
         setTitle(e == null ? "Exception" : e.getClass().getName());
 
         initComponents();
-        loadComponents();
+        drawComponents();
 
         pack();
     }
@@ -64,18 +63,16 @@ public class ExceptionDialog extends JDialog
         srlTrace.setVisible(false);
         
         // btnDetails - JButton
-        btnDetails = new JButton("Details >");
-        btnDetails.setAction(new DetailsButtonAction());
+        btnDetails = new JButton(new DetailsButtonAction());
         btnDetails.setPreferredSize(new Dimension(100, 40));
         
         // btnClose - JButton
-        btnClose = new JButton("OK");
-        btnClose.setAction(new CloseButtonAction());
+        btnClose = new JButton(new CloseButtonAction());
         btnClose.setDefaultCapable(true);
         btnClose.setPreferredSize(new Dimension(100, 40));
     }
 
-    private void loadComponents() {
+    private void drawComponents() {
         GridBagConstraints con = new GridBagConstraints();
         con.gridx = 0; con.gridy = 0;
         con.gridwidth = 1; con.gridheight = 1;
