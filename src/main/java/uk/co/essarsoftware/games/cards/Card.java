@@ -88,6 +88,10 @@ public class Card implements Comparable<Card>
         if(! (o instanceof Card)) {
             return false;
         }
+        // Cannot equal a joker
+        if(o instanceof Joker) {
+            return false;
+        }
         // Must be card with same pack ID (but not zero) and same card (same suit/value)
         Card c = (Card) o;
         return ((packID | c.packID) != 0 && c.packID == packID && sameCard(c));
@@ -214,7 +218,6 @@ public class Card implements Comparable<Card>
 
         private Joker() {
             this(0);
-            serial = nextSerial ++;
         }
 
         /**
@@ -224,6 +227,17 @@ public class Card implements Comparable<Card>
         Joker(long packID) {
             super(packID, null, null);
             boundCard = null;
+            serial = nextSerial ++;
+        }
+
+        /**
+         * Special case constructor for creating a bound joker. <tt>PackID</tt> is copied from an existing joker object and the joker is bound to <tt>card</tt>.
+         * @param joker an existing <tt>Joker</tt> to clone.
+         * @param card a <tt>Card</tt> to bind to this joker.
+         */
+        public Joker(Joker joker, Card card) {
+            this(joker.packID);
+            bindTo(card);
         }
 
         /**
