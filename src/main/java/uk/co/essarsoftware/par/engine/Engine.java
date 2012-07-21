@@ -99,7 +99,4 @@ public interface Engine
     public void abortGame();
 
     public void startGame() throws EngineException;
-
-    public void startRound() throws EngineException;
-
 }

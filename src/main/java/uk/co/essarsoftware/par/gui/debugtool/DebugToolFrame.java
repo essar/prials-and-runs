@@ -240,6 +240,10 @@ public class DebugToolFrame extends JFrame
         final Game game = gf.createGame();
         final Engine engine = gf.createEngine(game);
 
+        final DirectClient dc1 = new DirectClient(engine, game.getController(), "Player 1");
+        final DirectClient dc2 = new DirectClient(engine, game.getController(), "Player 2");
+        final DirectClient dc3 = new DirectClient(engine, game.getController(), "Player 3");
+
         try {
             SwingUtilities.invokeAndWait(new Runnable() {
                 @Override
@@ -247,9 +251,9 @@ public class DebugToolFrame extends JFrame
                     DebugToolFrame dtf = new DebugToolFrame(game);
                     dtf.setDefaultCloseOperation(WindowConstants.EXIT_ON_CLOSE);
 
-                    dtf.addClient(new DirectClient(engine, game.getController(), "Player 1"));
-                    dtf.addClient(new DirectClient(engine, game.getController(), "Player 2"));
-                    dtf.addClient(new DirectClient(engine, game.getController(), "Player 3"));
+                    dtf.addClient(dc1);
+                    dtf.addClient(dc2);
+                    dtf.addClient(dc3);
 
                     dtf.addLog("Root", Logger.getRootLogger());
 

@@ -16,7 +16,7 @@ import uk.co.essarsoftware.par.engine.Player;
  * Time: 16:05
  * To change this template use File | Settings | File Templates.
  */
-public class BuyRequestEvent extends AbstractGameEvent
+public class BuyRequestEvent extends AbstractPlayerEvent
 {
     private Card card;
     private Player buyer;

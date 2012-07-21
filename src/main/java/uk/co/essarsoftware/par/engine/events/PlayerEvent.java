@@ -6,26 +6,16 @@
 
 package uk.co.essarsoftware.par.engine.events;
 
-import uk.co.essarsoftware.par.engine.Play;
 import uk.co.essarsoftware.par.engine.Player;
 
 /**
  * Created by IntelliJ IDEA.
  * User: robsteve
  * Date: 06/06/12
- * Time: 16:02
+ * Time: 15:36
  * To change this template use File | Settings | File Templates.
  */
-public class PlayCardsEvent extends AbstractPlayerEvent
+public interface PlayerEvent extends GameEvent
 {
-    private Play[] plays;
-
-    public PlayCardsEvent(Player player, Play[] plays) {
-        super(player);
-        this.plays = plays;
-    }
-    
-    public Play[] getPlays() {
-        return plays;
-    }
+    public Player getPlayer();
 }

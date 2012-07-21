@@ -6,7 +6,6 @@
 
 package uk.co.essarsoftware.par.engine.events;
 
-import uk.co.essarsoftware.par.engine.Play;
 import uk.co.essarsoftware.par.engine.Player;
 
 /**
@@ -16,16 +15,16 @@ import uk.co.essarsoftware.par.engine.Player;
  * Time: 16:02
  * To change this template use File | Settings | File Templates.
  */
-public class PlayCardsEvent extends AbstractPlayerEvent
+abstract class AbstractPlayerEvent implements PlayerEvent
 {
-    private Play[] plays;
-
-    public PlayCardsEvent(Player player, Play[] plays) {
-        super(player);
-        this.plays = plays;
-    }
+    protected Player player;
     
-    public Play[] getPlays() {
-        return plays;
+    protected AbstractPlayerEvent(Player player) {
+        this.player = player;
+    }
+
+    @Override
+    public Player getPlayer() {
+        return player;
     }
 }

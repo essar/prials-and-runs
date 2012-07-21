@@ -17,7 +17,7 @@ import uk.co.essarsoftware.par.engine.Player;
  * Time: 16:02
  * To change this template use File | Settings | File Templates.
  */
-public class PegCardEvent extends AbstractGameEvent
+public class PegCardEvent extends AbstractPlayerEvent
 {
     private Card card;
     private Play play;

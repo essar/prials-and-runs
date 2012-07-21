@@ -6,7 +6,6 @@
 
 package uk.co.essarsoftware.par.engine.events;
 
-import uk.co.essarsoftware.games.cards.Card;
 import uk.co.essarsoftware.par.engine.Player;
 
 /**
@@ -16,7 +15,7 @@ import uk.co.essarsoftware.par.engine.Player;
  * Time: 16:05
  * To change this template use File | Settings | File Templates.
  */
-public class PickupDrawEvent extends AbstractGameEvent
+public class PickupDrawEvent extends AbstractPlayerEvent
 {
     public PickupDrawEvent(Player player) {
         super(player);

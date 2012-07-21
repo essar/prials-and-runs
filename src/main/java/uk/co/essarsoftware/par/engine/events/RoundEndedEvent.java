@@ -16,7 +16,7 @@ import uk.co.essarsoftware.par.engine.Round;
  * Time: 16:05
  * To change this template use File | Settings | File Templates.
  */
-public class RoundEndedEvent extends AbstractGameEvent
+public class RoundEndedEvent extends AbstractPlayerEvent
 {
     private Round currentRound;
 

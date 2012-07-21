@@ -16,7 +16,7 @@ import uk.co.essarsoftware.par.engine.Player;
  * Time: 16:02
  * To change this template use File | Settings | File Templates.
  */
-public class DiscardEvent extends AbstractGameEvent
+public class DiscardEvent extends AbstractPlayerEvent
 {
     private Card discard;
     

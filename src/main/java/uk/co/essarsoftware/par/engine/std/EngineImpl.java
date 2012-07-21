@@ -278,6 +278,57 @@ class EngineImpl implements Engine
         }
     }
 
+    /**
+     * Initialises and starts the next round of the game.
+     * @throws EngineException if a problem occurs during the start round process
+     */
+    void startRound() throws EngineException {
+        log.trace(String.format("Entering startRound"));
+
+        // Move to next round
+        Round round = game.nextRound();
+        if(round == Round.END) {
+            // End of game
+            endGame();
+            return;
+        }
+
+        // Set up table
+        game.getTable().resetTable();
+
+        // Deal playCards
+        {
+            int handIndex = 0;
+            PlayerImpl dealer = game.getDealer();
+            PlayerImpl player = dealer;
+            CardArray[] hands = game.getTable().deal();
+
+            do {
+                player = game.getNextPlayer(player);
+                log.debug(String.format("Dealing playCards for %s", player));
+                player.deal(hands[handIndex ++]);
+
+                // Set player states
+                player.setDown(false);
+                player.setPlayerState(PlayerState.WATCHING);  // Don't use local private method so don't send out events
+            } while(! player.equals(dealer) && handIndex < hands.length);
+
+            log.debug(String.format("Cards dealt to %d players", handIndex));
+        }
+
+        // Initialise table objects
+        game.getTable().initialiseRound(round);
+
+        // Queue notifications
+        queueEvent(new RoundStartedEvent(game.getCurrentPlayer(), round));
+        gameLog(String.format("Round started"));
+
+        // Move to next player
+        activate(game.nextPlayer());
+
+        log.trace(String.format("Leaving startRound"));
+    }
+
     @Override
     public void discard(Player player, Card card) throws EngineException {
         PlayerImpl pl = getPlayerImpl(player);
@@ -742,56 +793,9 @@ class EngineImpl implements Engine
             clients.startAllAgents();
 
             // Start first round
-            startRound();
+            queueEvent(new StartGameEvent());
+            //initAndStartNextRound();
         }
-    }
-
-    @Override
-    public void startRound() throws EngineException {
-        log.trace(String.format("Entering startRound"));
-
-        // Move to next round
-        Round round = game.nextRound();
-        if(round == Round.END) {
-            // End of game
-            endGame();
-            return;
-        }
-
-        // Set up table
-        game.getTable().resetTable();
-
-        // Deal playCards
-        {
-            int handIndex = 0;
-            PlayerImpl dealer = game.getDealer();
-            PlayerImpl player = dealer;
-            CardArray[] hands = game.getTable().deal();
-
-            do {
-                player = game.getNextPlayer(player);
-                log.debug(String.format("Dealing playCards for %s", player));
-                player.deal(hands[handIndex ++]);
-
-                // Set player states
-                player.setDown(false);
-                player.setPlayerState(PlayerState.WATCHING);  // Don't use local private method so don't send out events
-            } while(! player.equals(dealer) && handIndex < hands.length);
-
-            log.debug(String.format("Cards dealt to %d players", handIndex));
-        }
-
-        // Initialise table objects
-        game.getTable().initialiseRound(round);
-
-        // Queue notifications
-        queueEvent(new RoundStartedEvent(game.getCurrentPlayer(), round));
-        gameLog(String.format("Round started"));
-
-        // Move to next player
-        activate(game.nextPlayer());
-
-        log.trace(String.format("Leaving startRound"));
     }
 
     private class InternalEventProcessor extends Thread implements GameEventProcessor
@@ -853,12 +857,12 @@ class EngineImpl implements Engine
                         break;
                 }
             }
-            if(evt instanceof RoundEndedEvent) {
+            if(evt instanceof RoundEndedEvent || evt instanceof StartGameEvent) {
                 try {
                     // Start the next round
                     startRound();
                 } catch(EngineException ee) {
-                    log.error(String.format("%s when attempting to start round: %s", ee.getClass().getName(), ee.getMessage()));
+                    log.error(String.format("%s when attempting to init and start round: %s", ee.getClass().getName(), ee.getMessage()));
                     log.debug(ee.getMessage(), ee);
                 }
             }

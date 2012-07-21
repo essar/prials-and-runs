@@ -17,5 +17,4 @@ import uk.co.essarsoftware.par.engine.Player;
  */
 public interface GameEvent
 {
-    public Player getPlayer();
 }

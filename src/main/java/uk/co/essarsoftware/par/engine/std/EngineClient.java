@@ -431,55 +431,59 @@ class EngineClient implements GameClient
         @Override
         public void processEvent(GameEvent evt) {
             log.debug(String.format("[%s] Processing %s", player, evt.getClass().getName()));
-            boolean thisPlayer = player.equals(evt.getPlayer());
+            if(evt instanceof PlayerEvent) {
+                PlayerEvent pEvt = (PlayerEvent) evt;
+                boolean thisPlayer = player.equals(pEvt.getPlayer());
 
-            if(evt instanceof BuyApprovedEvent) {
-                BuyApprovedEvent baEvt = (BuyApprovedEvent) evt;
-                ui.buyApproved(baEvt.getPlayer(), baEvt.getBuyer(), baEvt.getCard(), thisPlayer);
-            }
-            if(evt instanceof BuyRejectedEvent) {
-                BuyRejectedEvent brEvt = (BuyRejectedEvent) evt;
-                ui.buyRejected(brEvt.getPlayer(), brEvt.getBuyer(), brEvt.getCard(), thisPlayer);
-            }
-            if(evt instanceof BuyRequestEvent) {
-                BuyRequestEvent brEvt = (BuyRequestEvent) evt;
-                ui.buyRequest(brEvt.getPlayer(), brEvt.getBuyer(), brEvt.getCard(), thisPlayer);
-            }
-            if(evt instanceof DiscardEvent) {
-                DiscardEvent dEvt = (DiscardEvent) evt;
-                ui.cardDiscarded(dEvt.getPlayer(), dEvt.getDiscard(), thisPlayer);
-            }
-            if(evt instanceof PegCardEvent) {
-                PegCardEvent pcEvt = (PegCardEvent) evt;
-                ui.cardPegged(pcEvt.getPlayer(), pcEvt.getPlay(), pcEvt.getCard(), thisPlayer);
-            }
-            if(evt instanceof PickupDiscardEvent) {
-                PickupDiscardEvent pdEvt = (PickupDiscardEvent) evt;
-                ui.discardPickup(pdEvt.getPlayer(), pdEvt.getPickup(), thisPlayer);
-            }
-            if(evt instanceof PickupDrawEvent) {
-                PickupDrawEvent pdEvt = (PickupDrawEvent) evt;
-                ui.drawPickup(pdEvt.getPlayer(), thisPlayer);
-            }
-            if(evt instanceof PlayCardsEvent) {
-                PlayCardsEvent pcEvt = (PlayCardsEvent) evt;
-                ui.cardsPlayed(pcEvt.getPlayer(), pcEvt.getPlays(), thisPlayer);
-            }
-            if(evt instanceof PlayerOutEvent) {
-                PlayerOutEvent poEvt = (PlayerOutEvent) evt;
-                ui.playerOut(poEvt.getPlayer(), thisPlayer);
-            }
-            if(evt instanceof PlayerStateChangeEvent) {
-                PlayerStateChangeEvent pscEvt = (PlayerStateChangeEvent) evt;
-                ui.playerStateChange(pscEvt.getPlayer(), pscEvt.getOldState(), pscEvt.getNewState(), thisPlayer);
-            }
-            if(evt instanceof RoundEndedEvent) {
-                RoundEndedEvent reEvt = (RoundEndedEvent) evt;
-                ui.roundEnded(reEvt.getCurrentRound());
-            }
-            if(evt instanceof RoundStartedEvent) {
-                RoundStartedEvent rsEvt = (RoundStartedEvent) evt;
-                ui.roundStarted(rsEvt.getCurrentRound());
+
+                if(pEvt instanceof BuyApprovedEvent) {
+                    BuyApprovedEvent baEvt = (BuyApprovedEvent) pEvt;
+                    ui.buyApproved(baEvt.getPlayer(), baEvt.getBuyer(), baEvt.getCard(), thisPlayer);
+                }
+                if(pEvt instanceof BuyRejectedEvent) {
+                    BuyRejectedEvent brEvt = (BuyRejectedEvent) pEvt;
+                    ui.buyRejected(brEvt.getPlayer(), brEvt.getBuyer(), brEvt.getCard(), thisPlayer);
+                }
+                if(pEvt instanceof BuyRequestEvent) {
+                    BuyRequestEvent brEvt = (BuyRequestEvent) pEvt;
+                    ui.buyRequest(brEvt.getPlayer(), brEvt.getBuyer(), brEvt.getCard(), thisPlayer);
+                }
+                if(pEvt instanceof DiscardEvent) {
+                    DiscardEvent dEvt = (DiscardEvent) pEvt;
+                    ui.cardDiscarded(dEvt.getPlayer(), dEvt.getDiscard(), thisPlayer);
+                }
+                if(pEvt instanceof PegCardEvent) {
+                    PegCardEvent pcEvt = (PegCardEvent) pEvt;
+                    ui.cardPegged(pcEvt.getPlayer(), pcEvt.getPlay(), pcEvt.getCard(), thisPlayer);
+                }
+                if(pEvt instanceof PickupDiscardEvent) {
+                    PickupDiscardEvent pdEvt = (PickupDiscardEvent) pEvt;
+                    ui.discardPickup(pdEvt.getPlayer(), pdEvt.getPickup(), thisPlayer);
+                }
+                if(pEvt instanceof PickupDrawEvent) {
+                    PickupDrawEvent pdEvt = (PickupDrawEvent) pEvt;
+                    ui.drawPickup(pdEvt.getPlayer(), thisPlayer);
+                }
+                if(pEvt instanceof PlayCardsEvent) {
+                    PlayCardsEvent pcEvt = (PlayCardsEvent) pEvt;
+                    ui.cardsPlayed(pcEvt.getPlayer(), pcEvt.getPlays(), thisPlayer);
+                }
+                if(pEvt instanceof PlayerOutEvent) {
+                    PlayerOutEvent poEvt = (PlayerOutEvent) pEvt;
+                    ui.playerOut(poEvt.getPlayer(), thisPlayer);
+                }
+                if(pEvt instanceof PlayerStateChangeEvent) {
+                    PlayerStateChangeEvent pscEvt = (PlayerStateChangeEvent) pEvt;
+                    ui.playerStateChange(pscEvt.getPlayer(), pscEvt.getOldState(), pscEvt.getNewState(), thisPlayer);
+                }
+                if(pEvt instanceof RoundEndedEvent) {
+                    RoundEndedEvent reEvt = (RoundEndedEvent) pEvt;
+                    ui.roundEnded(reEvt.getCurrentRound());
+                }
+                if(pEvt instanceof RoundStartedEvent) {
+                    RoundStartedEvent rsEvt = (RoundStartedEvent) pEvt;
+                    ui.roundStarted(rsEvt.getCurrentRound());
+                }
             }
         }
 
@@ -489,7 +493,9 @@ class EngineClient implements GameClient
             while(running) {
                 try {
                     GameEvent evt = queue.take();
-                    processEvent(evt);
+                    if(evt instanceof PlayerEvent) {
+                        processEvent((PlayerEvent) evt);
+                    }
                 } catch(InterruptedException ie) {
                     running = false;
                     log.debug(String.format("[%s] agent interrupted", player));
